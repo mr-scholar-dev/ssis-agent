@@ -38,3 +38,20 @@ The requested **initial target was SSIS 2016 (assembly v13)**. The environment p
 
 Until this is decided, the core will bind to v17 and mark generated packages with an explicit,
 recorded `TargetServerVersion`. No code pretends 2016 assemblies exist.
+
+## Empirical findings from the Phase 1 PoC (verified, not assumed)
+
+Running `SsisMcp.SsisPoc` and the integration tests on the v17 runtime established:
+
+- **The runtime `Package` object does NOT expose a `TargetServerVersion` property**, and it is not
+  present in the package `Properties` bag either. `TargetServerVersion` is a **project/design-time
+  (`.dtproj`) build concept**, not a standalone-package runtime property. Downlevel targeting must
+  therefore be driven at the **project build** level, not per-package via the runtime OM.
+  The `DTSTargetServerVersion` enum *does* exist in `Microsoft.SqlServer.ManagedDTS` v17.
+- A package created and saved via the runtime persists at **`PackageFormatVersion = 8`**.
+- Create → save (`Application.SaveToXml`) → reload (`Application.LoadPackage`) → inspect → `Validate`
+  returns **`Success`** and preserves structure (Sequence container, Execute SQL Task, OLE DB
+  connection). Confirmed by `PackageRoundtripTests`.
+
+**Consequence for the architecture:** the SSIS adapter will own a `.dtproj` project model where
+`TargetServerVersion` lives; the package-level API stays version-agnostic.

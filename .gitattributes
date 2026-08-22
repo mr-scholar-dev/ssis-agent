@@ -1,0 +1,9 @@
+# Normalize line endings; keep Windows-y files as CRLF.
+* text=auto
+*.cs text
+*.csproj text
+*.props text
+*.md text
+*.ps1 text eol=crlf
+*.manifest text
+*.dtsx text

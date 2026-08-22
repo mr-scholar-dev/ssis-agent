@@ -1,0 +1,26 @@
+<Project>
+  <!-- Shared SSIS assembly references. The .NET SDK resolver does not probe the legacy GAC,
+       so we HintPath the physical GAC files, discovering the version-stamped folder by wildcard
+       instead of hard-coding version/publicKeyToken. Central place for the version-adapter work. -->
+  <PropertyGroup>
+    <_GacMsil>$(WinDir)\Microsoft.NET\assembly\GAC_MSIL</_GacMsil>
+    <_Gac64>$(WinDir)\Microsoft.NET\assembly\GAC_64</_Gac64>
+  </PropertyGroup>
+  <ItemGroup>
+    <_ManagedDts Include="$(_GacMsil)\Microsoft.SqlServer.ManagedDTS\**\Microsoft.SqlServer.ManagedDTS.dll" />
+    <_PipelineWrap Include="$(_GacMsil)\Microsoft.SqlServer.DTSPipelineWrap\**\Microsoft.SqlServer.DTSPipelineWrap.dll" />
+    <_RuntimeWrap Include="$(_Gac64)\Microsoft.SqlServer.DTSRuntimeWrap\**\Microsoft.SqlServer.DTSRuntimeWrap.dll" />
+    <Reference Include="Microsoft.SqlServer.ManagedDTS">
+      <HintPath>@(_ManagedDts)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.SqlServer.DTSPipelineWrap">
+      <HintPath>@(_PipelineWrap)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.SqlServer.DTSRuntimeWrap">
+      <HintPath>@(_RuntimeWrap)</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

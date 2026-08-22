@@ -2,8 +2,11 @@
   <Folder Name="/src/">
     <Project Path="src/SsisMcp.Core/SsisMcp.Core.csproj" />
     <Project Path="src/SsisMcp.EnvProbe/SsisMcp.EnvProbe.csproj" />
+    <Project Path="src/SsisMcp.Ssis/SsisMcp.Ssis.csproj" />
+    <Project Path="src/SsisMcp.SsisPoc/SsisMcp.SsisPoc.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/SsisMcp.IntegrationTests/SsisMcp.IntegrationTests.csproj" />
     <Project Path="tests/SsisMcp.UnitTests/SsisMcp.UnitTests.csproj" />
   </Folder>
 </Solution>

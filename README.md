@@ -5,8 +5,16 @@ inspect, build, validate, execute, diagnose and repair **SQL Server Integration 
 projects and packages — programmatically, through the **SSIS Object Model / Runtime / Pipeline
 APIs**, not through fragile UI automation.
 
-> Status: **Milestone 0 — Repository + Environment Validation.** Only the environment detector
-> (Fase 0) is implemented so far. Everything else in the phase plan is not built yet.
+> Status: **Fase 1 — Proof of Concept SSIS API** complete. The environment detector (Fase 0) and a
+> real SSIS Object Model roundtrip (create → save → reload → inspect → validate) both pass against
+> the installed v17 runtime. Higher phases (MCP server, safety layer, builders) are not built yet.
+
+## Fase 1 proof of concept
+
+```powershell
+dotnet run --project src/SsisMcp.SsisPoc -c Debug        # roundtrips a package, validates, reports
+dotnet test tests/SsisMcp.IntegrationTests -c Debug      # same, as regression tests (real SSIS)
+```
 
 ## Why the API-first approach
 
