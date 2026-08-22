@@ -47,8 +47,14 @@ namespace SsisMcp.SsisPoc
                 Console.WriteLine("   validate result = " + result);
 
                 // Not-corrupt assertion: reloaded package must retain name, task and connection.
+                bool FindRecursive(System.Collections.Generic.IEnumerable<SsisMcp.Core.Packages.ExecutableInfo> xs, string name)
+                {
+                    foreach (var x in xs)
+                        if (x.Name == name || FindRecursive(x.Children, name)) return true;
+                    return false;
+                }
                 var ok = info.Name == "PoCPackage"
-                         && info.Executables.Exists(e => e.Name == "SqlBorrar")
+                         && FindRecursive(info.Executables, "SqlBorrar")
                          && info.Connections.Exists(c => c.Name == "PracticaOrigen");
 
                 var tgt = info.TargetServerVersion;

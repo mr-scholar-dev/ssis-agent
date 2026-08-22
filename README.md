@@ -5,10 +5,13 @@ inspect, build, validate, execute, diagnose and repair **SQL Server Integration 
 projects and packages — programmatically, through the **SSIS Object Model / Runtime / Pipeline
 APIs**, not through fragile UI automation.
 
-> Status: **Fase 0, Fase 1, and Fase 4 (Safety Layer) complete.** Environment detection, a real
-> SSIS Object Model roundtrip, and the transactional mutation gate (backup / SHA-256 / lock /
-> temp copy / validate / commit-or-rollback / abort-on-external-change / undo / JSONL audit) all
-> pass against the installed v17 runtime. Next: `.dtproj` + read-only MCP inspection.
+> Status: **Fase 0, 1, 4 and 2/3 complete.** Environment detection, a real SSIS Object Model
+> roundtrip, the transactional Safety layer, full `.dtproj`/package/Control Flow/Data Flow
+> inspection, and a **read-only MCP server** (5 tools) all pass against the installed v17 runtime
+> (39 tests). Write tools remain unexposed until the Control Flow builder lands. Next: Control Flow builder.
+>
+> Run the MCP server: `dotnet run --project src/SsisMcp.Server`. Tools & schemas:
+> [docs/mcp-tools.md](docs/mcp-tools.md).
 >
 > Visual Studio **2022 and 2026** are officially supported from the design; adapter contracts are
 > locked (`IVisualStudioAdapter`, `ISsisVersionAdapter` — separate responsibilities). See
@@ -59,15 +62,20 @@ The probe prints a report and returns a non-zero exit code if a **critical** dep
 
 ```
 src/
-  SsisMcp.Core/       DTOs, enums, version map, environment detector (net48)
+  SsisMcp.Core/       DTOs, enums, version map, environment detector, contracts (net48)
+  SsisMcp.Ssis/       SSIS Object Model + Pipeline API: services & inspectors (net48)
+  SsisMcp.Safety/     transactional mutation gate: hash/backup/lock/audit (net48)
+  SsisMcp.Server/     read-only MCP stdio server (net48)
   SsisMcp.EnvProbe/   Fase 0 console runner (net48, x64)
+  SsisMcp.SsisPoc/    Fase 1 SSIS roundtrip proof of concept
 tests/
-  SsisMcp.UnitTests/  xUnit tests (version map, GAC scanner, report)
-docs/                 architecture, versioning, safety, tools, testing
+  SsisMcp.UnitTests/         version map, GAC scanner, safety pipeline, MCP dispatch
+  SsisMcp.IntegrationTests/  real SSIS: roundtrip, safety, inspection, server stdio, project
+docs/                        architecture, versioning, safety, tools, testing, VS adapters
 ```
 
-Later phases add `SsisMcp.Ssis`, `SsisMcp.SqlServer`, `SsisMcp.Excel`, `SsisMcp.Access`,
-`SsisMcp.Safety`, `SsisMcp.Planner`, `SsisMcp.Server`, `SsisMcp.VisualStudioBridge`.
+Later phases add `SsisMcp.SqlServer`, `SsisMcp.Excel`, `SsisMcp.Access`, `SsisMcp.Planner`,
+and `SsisMcp.VisualStudioBridge` (VS 2022/2026 adapters).
 
 ## Security
 

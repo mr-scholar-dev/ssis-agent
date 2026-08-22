@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using SsisMcp.Core.Packages;
+using SsisMcp.Ssis.Inspection;
 using Dts = Microsoft.SqlServer.Dts.Runtime;
 
 namespace SsisMcp.Ssis
@@ -58,18 +59,17 @@ namespace SsisMcp.Ssis
             return pkg;
         }
 
-        /// <summary>Produces a structured snapshot for MCP consumers.</summary>
+        /// <summary>Produces a full structured snapshot (Control Flow + Data Flow) for MCP consumers.</summary>
         public PackageInfo Inspect(Dts.Package package)
         {
             var info = new PackageInfo
             {
                 Name = package.Name,
+                Id = package.ID,
                 TargetServerVersion = TryGetTargetServerVersion(package),
-                ProtectionLevel = package.ProtectionLevel.ToString()
+                ProtectionLevel = package.ProtectionLevel.ToString(),
+                PackageFormatVersion = TryGetPackageFormatVersion(package)
             };
-
-            foreach (Dts.Executable exec in package.Executables)
-                AddExecutable(info, exec);
 
             foreach (Dts.ConnectionManager cm in package.Connections)
             {
@@ -80,34 +80,78 @@ namespace SsisMcp.Ssis
                     Id = cm.ID
                 });
             }
+
+            var cmById = BuildConnectionNameMap(package);
+            ControlFlowInspector.Populate(package, info, cmById);
+            DataFlowInspector.Populate(package, info, cmById);
             return info;
         }
 
-        private static void AddExecutable(PackageInfo info, Dts.Executable exec)
+        /// <summary>Loads then inspects a package file, also reading PackageFormatVersion from disk.</summary>
+        public PackageInfo InspectFile(string path)
         {
-            if (exec is Dts.TaskHost th)
+            var pkg = Load(path);
+            var info = Inspect(pkg);
+            if (info.PackageFormatVersion == null)
+                info.PackageFormatVersion = PackageFormatVersionReader.FromFile(path);
+
+            // Task-level connection references come from the file (the OM cannot expose them for
+            // COM-backed tasks). Merge them into the executable tree by ObjectName.
+            var usage = ConnectionUsageXmlReader.FromFile(path, info.Connections);
+            MergeConnectionUsage(info.Executables, usage);
+            return info;
+        }
+
+        private static void MergeConnectionUsage(
+            System.Collections.Generic.IEnumerable<ExecutableInfo> executables,
+            System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>> usage)
+        {
+            foreach (var e in executables)
             {
-                info.Executables.Add(new ExecutableInfo
-                {
-                    Name = th.Name,
-                    TypeName = th.InnerObject?.GetType().Name,
-                    CreationName = th.CreationName
-                });
+                if (usage.TryGetValue(e.Name, out var names))
+                    foreach (var n in names)
+                        if (!e.ConnectionManagers.Contains(n)) e.ConnectionManagers.Add(n);
+                MergeConnectionUsage(e.Children, usage);
             }
-            else if (exec is Dts.Sequence seq)
+        }
+
+        internal static System.Collections.Generic.Dictionary<string, string> BuildConnectionNameMap(Dts.Package package)
+        {
+            var map = new System.Collections.Generic.Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase);
+            foreach (Dts.ConnectionManager cm in package.Connections)
             {
-                info.Executables.Add(new ExecutableInfo
+                if (!string.IsNullOrEmpty(cm.ID))
                 {
-                    Name = seq.Name,
-                    TypeName = "Sequence",
-                    CreationName = seq.CreationName
-                });
-                foreach (Dts.Executable child in seq.Executables)
-                    AddExecutable(info, child);
+                    map[cm.ID] = cm.Name;
+                    map[NormalizeId(cm.ID)] = cm.Name; // tolerate brace/case differences
+                }
+                if (!string.IsNullOrEmpty(cm.Name)) map[cm.Name] = cm.Name;
             }
-            else if (exec is Dts.DtsContainer c)
+            return map;
+        }
+
+        /// <summary>Resolves a connection reference (id or name) to a friendly CM name, else echoes it.</summary>
+        internal static string ResolveConnection(System.Collections.Generic.Dictionary<string, string> cmById, string reference)
+        {
+            if (cmById.TryGetValue(reference, out var name)) return name;
+            if (cmById.TryGetValue(NormalizeId(reference), out var name2)) return name2;
+            return reference;
+        }
+
+        private static string NormalizeId(string id) => id.Trim('{', '}').ToUpperInvariant();
+
+        private static int? TryGetPackageFormatVersion(Dts.Package package)
+        {
+            try
             {
-                info.Executables.Add(new ExecutableInfo { Name = c.Name, TypeName = c.GetType().Name });
+                var prop = package.Properties["PackageFormatVersion"];
+                var val = prop?.GetValue(package);
+                if (val == null) return null;
+                return System.Convert.ToInt32(val);
+            }
+            catch (System.Exception)
+            {
+                return null;
             }
         }
 

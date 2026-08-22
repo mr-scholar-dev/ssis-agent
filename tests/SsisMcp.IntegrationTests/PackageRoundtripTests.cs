@@ -33,8 +33,10 @@ namespace SsisMcp.IntegrationTests
             var info = svc.Inspect(reloaded);
 
             Assert.Equal("PoCPackage", info.Name);
-            Assert.Contains(info.Executables, e => e.Name == "SEQ_Main" && e.TypeName == "Sequence");
-            Assert.Contains(info.Executables, e => e.Name == "SqlBorrar");
+            Assert.Contains(info.Executables, e => e.Name == "SEQ_Main");
+            // SqlBorrar is nested inside SEQ_Main (hierarchical Control Flow).
+            var seq = info.Executables.Single(e => e.Name == "SEQ_Main");
+            Assert.Contains(seq.Children, e => e.Name == "SqlBorrar");
             Assert.Contains(info.Connections, c => c.Name == "PracticaOrigen");
 
             Assert.Equal(Dts.DTSExecResult.Success, svc.Validate(reloaded));
