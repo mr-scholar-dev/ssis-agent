@@ -10,6 +10,16 @@ namespace SsisMcp.IntegrationTests.Support
     /// </summary>
     internal static class FixtureBuilder
     {
+        /// <summary>Empty package with a single OLE DB connection manager, for builder tests.</summary>
+        public static Dts.Package BuildEmptyWithConnection(string packageName = "BuildTarget", string connectionName = "Origen")
+        {
+            var pkg = new Dts.Package { Name = packageName };
+            var cm = pkg.Connections.Add("OLEDB");
+            cm.Name = connectionName;
+            cm.ConnectionString = "Data Source=.;Initial Catalog=master;Provider=MSOLEDBSQL;Integrated Security=SSPI;";
+            return pkg;
+        }
+
         /// <summary>
         /// Control Flow fixture: two Execute SQL Tasks with a Completion precedence constraint
         /// (Task1 -> Task2) inside the package, plus an OLE DB connection manager.

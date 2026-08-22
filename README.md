@@ -5,10 +5,12 @@ inspect, build, validate, execute, diagnose and repair **SQL Server Integration 
 projects and packages — programmatically, through the **SSIS Object Model / Runtime / Pipeline
 APIs**, not through fragile UI automation.
 
-> Status: **Fase 0, 1, 4 and 2/3 complete.** Environment detection, a real SSIS Object Model
-> roundtrip, the transactional Safety layer, full `.dtproj`/package/Control Flow/Data Flow
-> inspection, and a **read-only MCP server** (5 tools) all pass against the installed v17 runtime
-> (39 tests). Write tools remain unexposed until the Control Flow builder lands. Next: Control Flow builder.
+> Status: **Fase 0, 1, 4, 2/3 and 5 (Control Flow Builder) complete.** Environment detection, a real
+> SSIS Object Model roundtrip, the transactional Safety layer, full inspection, a **read-only MCP
+> server** (5 tools), and a Safety-gated **Control Flow builder** (create/configure/rename/remove/
+> connect/disconnect with round-trip re-inspection) all pass against the installed v17 runtime
+> (**53 tests**). Write tools remain unexposed by design. Capability matrix + partials:
+> [docs/control-flow-builder.md](docs/control-flow-builder.md). Next: Data Flow builder.
 >
 > Run the MCP server: `dotnet run --project src/SsisMcp.Server`. Tools & schemas:
 > [docs/mcp-tools.md](docs/mcp-tools.md).

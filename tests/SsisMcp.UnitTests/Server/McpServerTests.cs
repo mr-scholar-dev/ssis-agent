@@ -27,7 +27,7 @@ namespace SsisMcp.UnitTests.Server
         public void ToolsList_exposes_exactly_the_five_readonly_tools()
         {
             var resp = new McpServer().Dispatch(Req(2, "tools/list"))!;
-            var names = ((JArray)resp["result"]!["tools"]!).Select(t => (string?)t!["name"]).ToArray();
+            var names = ((JArray)resp["result"]!["tools"]!).Select(t => (string)t!["name"]!).ToArray();
 
             Assert.Equal(
                 new[] { "environment.detect", "project.inspect", "package.inspect", "controlflow.inspect", "dataflow.inspect" }.OrderBy(x => x),

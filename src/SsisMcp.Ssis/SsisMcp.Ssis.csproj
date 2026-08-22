@@ -16,5 +16,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SsisMcp.Core\SsisMcp.Core.csproj" />
+    <ProjectReference Include="..\SsisMcp.Safety\SsisMcp.Safety.csproj" />
   </ItemGroup>
 </Project>
