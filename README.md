@@ -5,9 +5,14 @@ inspect, build, validate, execute, diagnose and repair **SQL Server Integration 
 projects and packages — programmatically, through the **SSIS Object Model / Runtime / Pipeline
 APIs**, not through fragile UI automation.
 
-> Status: **Fase 1 — Proof of Concept SSIS API** complete. The environment detector (Fase 0) and a
-> real SSIS Object Model roundtrip (create → save → reload → inspect → validate) both pass against
-> the installed v17 runtime. Higher phases (MCP server, safety layer, builders) are not built yet.
+> Status: **Fase 0, Fase 1, and Fase 4 (Safety Layer) complete.** Environment detection, a real
+> SSIS Object Model roundtrip, and the transactional mutation gate (backup / SHA-256 / lock /
+> temp copy / validate / commit-or-rollback / abort-on-external-change / undo / JSONL audit) all
+> pass against the installed v17 runtime. Next: `.dtproj` + read-only MCP inspection.
+>
+> Visual Studio **2022 and 2026** are officially supported from the design; adapter contracts are
+> locked (`IVisualStudioAdapter`, `ISsisVersionAdapter` — separate responsibilities). See
+> [docs/visual-studio-adapters.md](docs/visual-studio-adapters.md).
 
 ## Fase 1 proof of concept
 
