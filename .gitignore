@@ -1,0 +1,35 @@
+## Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.user
+*.suo
+.vs/
+
+## Test / coverage
+[Tt]est[Rr]esult*/
+coverage*/
+*.trx
+
+## Rider / VS Code
+.idea/
+.vscode/
+
+## NuGet
+*.nupkg
+packages/
+
+## SSIS working artifacts produced by the agent (never commit generated/backed-up packages)
+**/_backups/
+**/_temp/
+**/*.dtsx.bak
+**/audit-*.jsonl
+
+## Local secrets / config (NEVER commit credentials)
+appsettings.local.json
+*.secrets.json
+.env
+secrets/

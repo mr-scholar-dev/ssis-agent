@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SsisMcp.Core/SsisMcp.Core.csproj" />
+    <Project Path="src/SsisMcp.EnvProbe/SsisMcp.EnvProbe.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SsisMcp.UnitTests/SsisMcp.UnitTests.csproj" />
+  </Folder>
+</Solution>

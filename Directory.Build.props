@@ -1,0 +1,17 @@
+<Project>
+  <!--
+    Solution-wide build settings.
+    SSIS assemblies (Microsoft.SqlServer.ManagedDTS / DTSPipelineWrap) are .NET Framework
+    (COM interop) assemblies, so any project that touches the SSIS Object Model must target
+    net48. We standardize on net48 for the whole solution in V1 to avoid a cross-runtime split.
+  -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyOriginatorKeyFile></AssemblyOriginatorKeyFile>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <Deterministic>true</Deterministic>
+    <NeutralLanguage>en-US</NeutralLanguage>
+  </PropertyGroup>
+</Project>
