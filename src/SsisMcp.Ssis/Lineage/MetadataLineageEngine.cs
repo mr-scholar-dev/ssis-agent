@@ -18,7 +18,7 @@ namespace SsisMcp.Ssis.Lineage
         {
             _handlers = handlers != null
                 ? new List<ILineageReferenceHandler>(handlers)
-                : new List<ILineageReferenceHandler> { new DataConversionLineageHandler() };
+                : new List<ILineageReferenceHandler> { new DataConversionLineageHandler(), new LookupLineageReferenceHandler() };
         }
 
         /// <summary>Builds a serializable lineage graph for a pipeline (lineage.inspect).</summary>

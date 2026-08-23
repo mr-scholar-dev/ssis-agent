@@ -214,18 +214,29 @@ namespace SsisMcp.Ssis.Building
             return output.ID;
         }
 
-        /// <summary>Lookup: configure reference connection + query, join columns and returned columns.</summary>
+        /// <summary>Name of the Lookup match output.</summary>
+        public const string LookupMatchOutput = "Lookup Match Output";
+        /// <summary>Name of the Lookup no-match output.</summary>
+        public const string LookupNoMatchOutput = "Lookup No Match Output";
+
+        /// <summary>
+        /// Lookup: reference connection + query, join columns (input↔reference), returned columns
+        /// (copied from reference into the match output). cacheType 0=Full/1=Partial/2=None;
+        /// noMatchBehavior 1 = redirect unmatched rows to the No Match output.
+        /// </summary>
         public void ConfigureLookup(string name, string connectionManager, string referenceSql,
             IEnumerable<(string inputColumn, string referenceColumn)> joins,
-            IEnumerable<string> returnColumns, int noMatchBehavior = 1)
+            IEnumerable<(string referenceColumn, string outputAlias, Rt.DataType dataType, int length, int precision, int scale, int codePage)> returnColumns,
+            int cacheType = 0, int noMatchBehavior = 1)
         {
             var comp = Require(name);
             var inst = comp.Instantiate();
-            WireConnection(comp, connectionManager);
+            inst.SetComponentProperty("CacheType", cacheType);
+            inst.SetComponentProperty("NoMatchBehavior", noMatchBehavior);
             inst.SetComponentProperty("SqlCommand", referenceSql);
-            inst.SetComponentProperty("NoMatchBehavior", noMatchBehavior); // 1 = send to no-match output
+            WireConnection(comp, connectionManager);
             inst.AcquireConnections(null);
-            inst.ReinitializeMetaData();
+            inst.ReinitializeMetaData(); // loads reference metadata
 
             var input = comp.InputCollection[0];
             var vInput = input.GetVirtualInput();
@@ -234,16 +245,26 @@ namespace SsisMcp.Ssis.Building
                 var lineage = FindVirtualColumnLineage(vInput, inputColumn);
                 inst.SetUsageType(input.ID, vInput, lineage, Wrapper.DTSUsageType.UT_READONLY);
                 var inputCol = FindInputColumnByLineage(input, lineage);
-                inst.SetInputColumnProperty(input.ID, inputCol.ID, "JoinToReferenceColumn", referenceColumn);
+                SetCustomProperty(inputCol.CustomPropertyCollection, "JoinToReferenceColumn", referenceColumn);
             }
-            var matchOutput = comp.OutputCollection[0];
-            foreach (var refCol in returnColumns)
+
+            var matchOutput = FindOutput(comp, LookupMatchOutput);
+            foreach (var rc in returnColumns)
             {
-                var col = matchOutput.OutputColumnCollection.New();
-                col.Name = refCol;
-                inst.SetOutputColumnProperty(matchOutput.ID, col.ID, "CopyFromReferenceColumn", refCol);
+                // Add via the component's design-time so it configures the column (dispositions,
+                // custom properties) validly, then bind it to the reference column + data type.
+                var col = inst.InsertOutputColumnAt(matchOutput.ID, matchOutput.OutputColumnCollection.Count, rc.outputAlias, "");
+                SetCustomProperty(col.CustomPropertyCollection, "CopyFromReferenceColumn", rc.referenceColumn);
+                col.SetDataTypeProperties(rc.dataType, rc.length, rc.precision, rc.scale, rc.codePage);
             }
             inst.ReleaseConnections();
+        }
+
+        private static Wrapper.IDTSOutput100 FindOutput(Wrapper.IDTSComponentMetaData100 comp, string name)
+        {
+            foreach (Wrapper.IDTSOutput100 o in comp.OutputCollection)
+                if (o.Name == name) return o;
+            throw new BuilderException(BuilderErrorCode.InvalidPrecedence, $"output '{name}' not found on '{comp.Name}'");
         }
 
         // ---------------- inspection ----------------
