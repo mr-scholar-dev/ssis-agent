@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <RootNamespace>SsisMcp.SampleGen</RootNamespace>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <Import Project="..\..\build\Ssis.References.props" />
+  <ItemGroup>
+    <ProjectReference Include="..\SsisMcp.Core\SsisMcp.Core.csproj" />
+    <ProjectReference Include="..\SsisMcp.Ssis\SsisMcp.Ssis.csproj" />
+  </ItemGroup>
+</Project>

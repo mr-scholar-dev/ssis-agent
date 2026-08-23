@@ -1,0 +1,139 @@
+<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="8/22/2026 11:42:56 PM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="DESKTOP-VP44JKB"
+  DTS:CreatorName="DESKTOP-VP44JKB\serra"
+  DTS:DTSID="{E483F2D5-2E33-4AF3-A02B-0E0DFE558362}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="17.0.1000.7"
+  DTS:LocaleID="1033"
+  DTS:ObjectName="IntegracionPractica"
+  DTS:VersionGUID="{19AC02CB-D0E7-496E-947D-E396C0E9700A}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:ConnectionManagers>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[Vet]"
+      DTS:CreationName="OLEDB"
+      DTS:DTSID="{97A634A8-A0C2-4AF5-8929-339F1D2DD65E}"
+      DTS:ObjectName="Vet">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectRetryCount="1"
+          DTS:ConnectRetryInterval="5"
+          DTS:ConnectionString="Data Source=.;Initial Catalog=tempdb;Provider=MSOLEDBSQL;Integrated Security=SSPI;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+  </DTS:ConnectionManagers>
+  <DTS:Variables />
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\DFTCliente"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:DTSID="{3705EFB1-A9B2-40F4-9DE9-2E211C02D7C6}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="DFTCliente"
+      DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <pipeline
+          version="1" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\DFTEnfermedad"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:DTSID="{5D548A7E-3C9C-4C22-8609-D40FA0459212}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="DFTEnfermedad"
+      DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <pipeline
+          version="1" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\DFTMascota"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:DTSID="{4FE271B8-BD81-407B-A71A-20DAF99D708F}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="DFTMascota"
+      DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <pipeline
+          version="1" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\DFTTipoCliente"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:DTSID="{7E196BB2-D0D9-494A-9966-782089370767}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="DFTTipoCliente"
+      DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <pipeline
+          version="1" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\SqlBorrar"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:DTSID="{9F0D50B0-0AEE-4EE9-A5A9-26ADB90FBB69}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="SqlBorrar"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2025; © 2025 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{97A634A8-A0C2-4AF5-8929-339F1D2DD65E}"
+          SQLTask:SqlStatementSource="SELECT 1;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:PrecedenceConstraints>
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{0F1560D8-404E-4CDD-B42B-B761B5822691\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{0F1560D8-404E-4CDD-B42B-B761B5822691}"
+      DTS:From="Package\DFTCliente"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{0F1560D8-404E-4CDD-B42B-B761B5822691}"
+      DTS:To="Package\DFTMascota" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{681D95DB-8C07-4332-8AF0-C0DF12C91FC5\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{681D95DB-8C07-4332-8AF0-C0DF12C91FC5}"
+      DTS:From="Package\SqlBorrar"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{681D95DB-8C07-4332-8AF0-C0DF12C91FC5}"
+      DTS:To="Package\DFTTipoCliente" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{97328E48-FF44-4DDE-B297-D1DB85D43483\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{97328E48-FF44-4DDE-B297-D1DB85D43483}"
+      DTS:From="Package\DFTTipoCliente"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{97328E48-FF44-4DDE-B297-D1DB85D43483}"
+      DTS:To="Package\DFTCliente" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{DEFE2BC7-6303-4309-9AFA-707D63F70F48\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{DEFE2BC7-6303-4309-9AFA-707D63F70F48}"
+      DTS:From="Package\DFTMascota"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{DEFE2BC7-6303-4309-9AFA-707D63F70F48}"
+      DTS:To="Package\DFTEnfermedad" />
+  </DTS:PrecedenceConstraints>
+</DTS:Executable>

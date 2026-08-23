@@ -3,6 +3,7 @@
     <Project Path="src/SsisMcp.Core/SsisMcp.Core.csproj" />
     <Project Path="src/SsisMcp.EnvProbe/SsisMcp.EnvProbe.csproj" />
     <Project Path="src/SsisMcp.Safety/SsisMcp.Safety.csproj" />
+    <Project Path="src/SsisMcp.SampleGen/SsisMcp.SampleGen.csproj" />
     <Project Path="src/SsisMcp.Server/SsisMcp.Server.csproj" />
     <Project Path="src/SsisMcp.Ssis/SsisMcp.Ssis.csproj" />
     <Project Path="src/SsisMcp.SsisPoc/SsisMcp.SsisPoc.csproj" />
