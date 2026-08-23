@@ -110,10 +110,13 @@ namespace SsisMcp.SampleGen
             Console.WriteLine($"Generated: {path}  (DataFlow build: ok1={ok1} succeeded={r.Succeeded} {r.ErrorCode})");
             if (r.Succeeded)
             {
-                var df = r.Package!.DataFlows.First();
+                var info2 = svc.InspectFile(path);
+                var boxes = new SsisMcp.Designer.DataFlowLayoutEngine().Apply(path, info2, SsisMcp.Designer.LayoutMode.Relayout);
+                Console.WriteLine($"   Data Flow layout applied ({boxes.Count} components positioned left->right).");
+                Console.WriteLine("   Post-layout validate: " + svc.Validate(svc.Load(path)));
+                var df = info2.DataFlows.First();
                 Console.WriteLine("   components: " + string.Join(", ", df.Components.Select(c => c.Name)));
                 Console.WriteLine("   paths: " + string.Join(", ", df.Paths.Select(p => p.StartComponent + "->" + p.EndComponent)));
-                Console.WriteLine("   Open the Data Flow tab in VS 2022, MOVE a component, Save All -> then share for golden capture.");
             }
         }
 

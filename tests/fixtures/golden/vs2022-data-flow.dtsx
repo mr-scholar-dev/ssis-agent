@@ -1,23 +1,24 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
   DTS:refId="Package"
-  DTS:CreationDate="8/23/2026 11:10:26 AM"
+  DTS:CreationDate="8/23/2026 12:27:50 AM"
   DTS:CreationName="Microsoft.Package"
   DTS:CreatorComputerName="DESKTOP-VP44JKB"
   DTS:CreatorName="DESKTOP-VP44JKB\serra"
-  DTS:DTSID="{42453C20-0FB5-4FD7-B45A-607C33575C69}"
+  DTS:DTSID="{E0757C49-F44F-4823-86E7-BB321C822719}"
   DTS:ExecutableType="Microsoft.Package"
-  DTS:LastModifiedProductVersion="17.0.1000.7"
+  DTS:LastModifiedProductVersion="17.0.1016.0"
   DTS:LocaleID="1033"
   DTS:ObjectName="DataFlowBenchmark"
-  DTS:VersionGUID="{0E79C045-CC06-4B57-870F-87C8A1A99E89}">
+  DTS:VersionBuild="1"
+  DTS:VersionGUID="{2DE7ACB5-A26D-4D10-BD8A-C1DE3F974ED2}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[Db]"
       DTS:CreationName="OLEDB"
-      DTS:DTSID="{E080AAB0-D637-4792-A39D-B03B33C425DB}"
+      DTS:DTSID="{1B7662E8-EAEC-4B8D-837F-D57C7C105155}"
       DTS:ObjectName="Db">
       <DTS:ObjectData>
         <DTS:ConnectionManager
@@ -32,7 +33,7 @@
     <DTS:Executable
       DTS:refId="Package\DFT"
       DTS:CreationName="Microsoft.Pipeline"
-      DTS:DTSID="{107B9F69-CFC0-4996-B44E-1687D2130BA0}"
+      DTS:DTSID="{4745246F-2F93-4B3E-BE96-A8904B93C8BA}"
       DTS:ExecutableType="Microsoft.Pipeline"
       DTS:LocaleID="-1"
       DTS:ObjectName="DFT"
@@ -529,22 +530,139 @@
     </DTS:Executable>
   </DTS:Executables>
   <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
-<!--Layout written by SsisMcp.Designer (Data Flow).-->
-<Objects Version="8">
-  <Package design-time-name="Package">
+<!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
+<!--If you manually edit this section and make a mistake, you can delete it. -->
+<!--The package will still be able to load normally but the previous layout information will be lost and the designer will automatically re-arrange the elements on the design surface.-->
+<Objects
+  Version="8">
+  <!--Each node below will contain properties that do not affect runtime behavior.-->
+  <Package
+    design-time-name="Package">
     <LayoutInfo>
-      <GraphLayout Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph">
-        <NodeLayout Size="150,41.6" Id="Package\DFT" TopLeft="12,12" />
+      <GraphLayout
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph">
+        <NodeLayout
+          Size="98.4,41.6"
+          Id="Package\DFT"
+          TopLeft="5.50000000000001,5.49999999999995" />
       </GraphLayout>
     </LayoutInfo>
   </Package>
-  <TaskHost design-time-name="Package\DFT">
+  <TaskHost
+    design-time-name="Package\DFT">
     <LayoutInfo>
-      <GraphLayout Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph">
-        <NodeLayout Size="150,42" Id="Package\DFT\Src" TopLeft="12,12" />
-        <NodeLayout Size="150,42" Id="Package\DFT\CS" TopLeft="252,12" />
-        <NodeLayout Size="150,42" Id="Package\DFT\DstDefault" TopLeft="492,12" />
-        <NodeLayout Size="150,42" Id="Package\DFT\DstValid" TopLeft="492,114" />
+      <GraphLayout
+        Capacity="8" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mssgm="clr-namespace:Microsoft.SqlServer.Graph.Model;assembly=Microsoft.SqlServer.Graph">
+        <NodeLayout
+          Size="93.6,41.6"
+          Id="Package\DFT\Src"
+          TopLeft="200.5,5.49999999999995" />
+        <NodeLayout
+          Size="117.6,41.6"
+          Id="Package\DFT\DstValid"
+          TopLeft="5.50000000000004,208.7" />
+        <NodeLayout
+          Size="92.8,41.6"
+          Id="Package\DFT\CS"
+          TopLeft="200.9,107.1" />
+        <NodeLayout
+          Size="127.2,41.6"
+          Id="Package\DFT\DstDefault"
+          TopLeft="444.533319082029,326.566665847036" />
+        <EdgeLayout
+          Id="Package\DFT.Paths[Valid]"
+          TopLeft="233.166666666667,148.7">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-168.866666666667,59.9999999999999"
+              Start="0,0"
+              End="-168.866666666667,52.4999999999999">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,20.6101694915254" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,20.6101694915254"
+                    Point2="0,24.6101694915254"
+                    Point3="-4,24.6101694915254" />
+                  <mssgle:LineSegment
+                    End="-164.866666666667,24.6101694915254" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-164.866666666667,24.6101694915254"
+                    Point2="-168.866666666667,24.6101694915254"
+                    Point3="-168.866666666667,28.6101694915254" />
+                  <mssgle:LineSegment
+                    End="-168.866666666667,52.4999999999999" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-95.7845052083333,29.6101694915254,22.70234375,9.7490234375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\DFT.Paths[OLE DB Source Output]"
+          TopLeft="247.3,47.1">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,59.9999999999999"
+              Start="0,0"
+              End="0,52.4999999999999">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,52.4999999999999" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\DFT.Paths[Conditional Split Default Output]"
+          TopLeft="261.433333333333,148.7">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="246.699985748696,177.866665847036"
+              Start="0,0"
+              End="246.699985748696,170.366665847036">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,68.9554798898014" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,68.9554798898014"
+                    Point2="0,72.9554798898014"
+                    Point3="4,72.9554798898014" />
+                  <mssgle:LineSegment
+                    End="242.699985748696,72.9554798898014" />
+                  <mssgle:CubicBezierSegment
+                    Point1="242.699985748696,72.9554798898014"
+                    Point2="246.699985748696,72.9554798898014"
+                    Point3="246.699985748696,76.9554798898014" />
+                  <mssgle:LineSegment
+                    End="246.699985748696,170.366665847036" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="52.7360866243478,77.9554798898014,141.2278125,11.658203125"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
       </GraphLayout>
     </LayoutInfo>
   </TaskHost>

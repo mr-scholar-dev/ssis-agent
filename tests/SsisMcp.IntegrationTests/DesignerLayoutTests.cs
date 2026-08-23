@@ -110,6 +110,96 @@ namespace SsisMcp.IntegrationTests
             return set;
         }
 
+        // ---------------- Data Flow layout ----------------
+
+        private static bool SqlUp()
+        {
+            try { using (var c = new System.Data.SqlClient.SqlConnection("Data Source=.;Initial Catalog=tempdb;Integrated Security=true;TrustServerCertificate=true;Connect Timeout=3")) { c.Open(); } return true; }
+            catch { return false; }
+        }
+
+        private string BuildBranchingDataFlow()
+        {
+            using (var c = new System.Data.SqlClient.SqlConnection("Data Source=.;Initial Catalog=tempdb;Integrated Security=true;TrustServerCertificate=true"))
+            { c.Open(); using (var cmd = new System.Data.SqlClient.SqlCommand(
+                "IF OBJECT_ID('tempdb.dbo.DlV') IS NOT NULL DROP TABLE dbo.DlV; IF OBJECT_ID('tempdb.dbo.DlD') IS NOT NULL DROP TABLE dbo.DlD;" +
+                "CREATE TABLE dbo.DlV(Codigo int NULL, Nombre nvarchar(50) NULL); CREATE TABLE dbo.DlD(Codigo int NULL, Nombre nvarchar(50) NULL);", c)) cmd.ExecuteNonQuery(); }
+
+            var pkg = new Dts.Package { Name = "DF" };
+            ConnectionFactory.AddSqlOleDb(pkg, "Db", ".", "tempdb");
+            var path = Path.Combine(_dir, "dflow.dtsx");
+            _svc.Save(pkg, path);
+            Assert.True(new PackageEditor(_svc).Apply(path, cb => cb.AddTask(TaskKinds.DataFlow, "DFT")).Succeeded);
+            var r = new PackageEditor(_svc).ApplyDataFlow(path, "DFT", b =>
+            {
+                b.AddComponent(ComponentKinds.OleDbSource, "Src");
+                b.ConfigureOleDbSource("Src", "Db", 2, "SELECT CAST(1 AS int) AS Codigo, CAST('a' AS nvarchar(50)) AS Nombre");
+                b.AddComponent(ComponentKinds.ConditionalSplit, "CS");
+                b.Connect("Src", "CS"); b.ExposeAllInputColumns("CS");
+                b.AddConditionalSplitCase("CS", "Valid", "Codigo >= 0", 0);
+                b.AddComponent(ComponentKinds.OleDbDestination, "DstValid");
+                b.Connect("CS", "DstValid", fromOutput: "Valid");
+                b.ConfigureOleDbDestination("DstValid", "Db", "[dbo].[DlV]");
+                new MappingEngine(b).AutoMap("DstValid");
+                b.AddComponent(ComponentKinds.OleDbDestination, "DstDefault");
+                b.Connect("CS", "DstDefault", fromOutput: "Conditional Split Default Output");
+                b.ConfigureOleDbDestination("DstDefault", "Db", "[dbo].[DlD]");
+                new MappingEngine(b).AutoMap("DstDefault");
+            });
+            Assert.True(r.Succeeded, r.ErrorCode + ": " + r.Detail);
+            return path;
+        }
+
+        [Fact]
+        public void DataFlow_layout_positions_components_left_to_right_with_branches_and_stays_valid()
+        {
+            if (!SqlUp()) return;
+            var path = BuildBranchingDataFlow();
+            var info = _svc.InspectFile(path);
+            var boxes = new DataFlowLayoutEngine().Apply(path, info, LayoutMode.Relayout);
+
+            var by = boxes.ToDictionary(b => b.Name, b => b);
+            Assert.Equal(4, boxes.Count);
+            Assert.True(by["Src"].X < by["CS"].X);                       // left → right by depth
+            Assert.True(by["CS"].X < by["DstValid"].X);
+            Assert.Equal(by["DstValid"].X, by["DstDefault"].X);          // same layer
+            Assert.NotEqual(by["DstValid"].Y, by["DstDefault"].Y);       // branches separated on Y (no overlap)
+
+            var xml = File.ReadAllText(path);
+            Assert.Contains("<TaskHost design-time-name=\"Package\\DFT\">", xml);
+            Assert.Equal(4, ComponentNodeIds(xml).Count); // 4 component NodeLayouts (scoped to <NodeLayout>)
+
+            // functional package intact after layout injection
+            Assert.Equal(4, _svc.InspectFile(path).DataFlows.Single().Components.Count);
+            Assert.Equal(Dts.DTSExecResult.Success, _svc.Validate(_svc.Load(path)));
+        }
+
+        [Fact]
+        public void DataFlow_golden_component_nodes_match_mcp_semantically()
+        {
+            var golden = Path.Combine(FindRepoRoot(), "tests", "fixtures", "golden", "vs2022-data-flow.dtsx");
+            if (!File.Exists(golden)) return;
+
+            var goldenComp = ComponentNodeIds(File.ReadAllText(golden));
+            foreach (var c in new[] { "Src", "CS", "DstValid", "DstDefault" })
+                Assert.Contains("Package\\DFT\\" + c, goldenComp);
+
+            var mcp = Path.Combine(_dir, "mcp-df.dtsx");
+            File.Copy(golden, mcp, overwrite: true);
+            var info = _svc.InspectFile(mcp);
+            new DataFlowLayoutEngine().Apply(mcp, info, LayoutMode.Relayout);
+            var mcpComp = ComponentNodeIds(File.ReadAllText(mcp));
+            Assert.Equal(goldenComp.OrderBy(x => x), mcpComp.OrderBy(x => x)); // same component node-id set
+        }
+
+        private static System.Collections.Generic.HashSet<string> ComponentNodeIds(string xml)
+        {
+            var set = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+            foreach (Match m in Regex.Matches(xml, "<NodeLayout[^>]*Id=\"(Package\\\\DFT\\\\[^\"]+)\""))
+                set.Add(m.Groups[1].Value.Replace("\\\\", "\\"));
+            return set;
+        }
+
         private static string FindRepoRoot()
         {
             var d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
