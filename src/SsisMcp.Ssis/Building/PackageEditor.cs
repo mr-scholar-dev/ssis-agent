@@ -1,7 +1,9 @@
 using System;
 using SsisMcp.Core.Building;
+using SsisMcp.Core.Lineage;
 using SsisMcp.Core.Safety;
 using SsisMcp.Safety;
+using SsisMcp.Ssis.Lineage;
 using Dts = Microsoft.SqlServer.Dts.Runtime;
 using Wrapper = Microsoft.SqlServer.Dts.Pipeline.Wrapper;
 
@@ -93,14 +95,26 @@ namespace SsisMcp.Ssis.Building
             catch (BuilderException bx) { return OperationResult.Fail(bx.Code, bx.Message); }
             catch (Exception ex) { return OperationResult.Fail(BuilderErrorCode.MutationError, ex.GetType().Name + ": " + ex.Message); }
 
+            LineageRepairReport? repair = null;
             var edit = _tx.Apply(packagePath, tempPath =>
             {
+                // 1) build on the temp copy
                 var pkg = _svc.Load(tempPath);
                 Run(pkg);
                 _svc.Save(pkg, tempPath);
+
+                // 2) reload (SSIS reassigns lineage ids here) then repair stale references by
+                //    stable identity, so the committed package survives a fresh reload.
+                var reloaded = _svc.Load(tempPath);
+                var pipe = FindPipeline(reloaded, dataFlowTaskName);
+                if (pipe != null)
+                {
+                    repair = new MetadataLineageEngine().Repair(pipe, RepairMode.SafeRepair, 3);
+                    if (repair.Actions.Exists(a => a.Applied)) _svc.Save(reloaded, tempPath);
+                }
             }, tool);
 
-            var result = new OperationResult { SafetyState = edit.State.ToString(), BackupPath = edit.BackupPath, Detail = edit.Detail };
+            var result = new OperationResult { SafetyState = edit.State.ToString(), BackupPath = edit.BackupPath, Detail = edit.Detail, LineageRepair = repair };
             MapState(result, edit);
             if (result.Succeeded) result.Package = _svc.InspectFile(packagePath);
             return result;

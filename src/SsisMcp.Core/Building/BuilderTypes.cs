@@ -71,6 +71,9 @@ namespace SsisMcp.Core.Building
         /// <summary>Re-inspected package after a successful commit (reload-from-disk snapshot).</summary>
         public PackageInfo? Package { get; set; }
 
+        /// <summary>Lineage repair report, when the metadata/lineage engine ran during the operation.</summary>
+        public Lineage.LineageRepairReport? LineageRepair { get; set; }
+
         public static OperationResult Fail(BuilderErrorCode code, string detail) =>
             new OperationResult { Succeeded = false, ErrorCode = code.ToString(), Detail = detail };
     }

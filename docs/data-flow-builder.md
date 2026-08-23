@@ -46,7 +46,7 @@ MissingDestination`. Conversions are **reported, never inserted silently**.
 | Derived Column (`Impuesto=Monto*0.13`) | ✅ | ✅ | ✅ | **verified** |
 | Conditional Split (case + default, expression over upstream) | ✅ | ✅ | ✅ | **verified** |
 | Column mapping engine (compare/auto/set/remove) | ✅ | ✅ | ✅ | **verified** |
-| Data Conversion | ✅ | ✅ (in memory) | ❌ reload | **partial** |
+| Data Conversion | ✅ | ✅ | ✅ (via Metadata/Lineage engine) | **verified** (Fase 12) |
 | Lookup | code present | not run | — | **unverified** |
 | Excel Source/Destination | code present | not run | — | **unverified** |
 | Flat File Source/Destination | code present | not run | — | **unverified** |

@@ -10,8 +10,12 @@ APIs**, not through fragile UI automation.
 > server** (5 tools), a Safety-gated **Control Flow builder**, and a Safety-gated **Data Flow
 > builder** (OLE DB source/dest, Derived Column, Conditional Split, mapping engine — round-tripped
 > with lineage) all pass against the installed v17 runtime (**61 tests**). Write tools remain
-> unexposed by design. Data Flow capability matrix, partials (Data Conversion reload / Lookup /
-> Excel / Flat File) and discovered risks: [docs/data-flow-builder.md](docs/data-flow-builder.md).
+> unexposed by design. Data Flow capability matrix: [docs/data-flow-builder.md](docs/data-flow-builder.md).
+>
+> **Fase 12 — Metadata & Lineage engine** resolves the generic `save→reload→stale-lineage`
+> (`VS_NEEDSNEWMETADATA`) bug by rebinding references to current lineage ids by stable identity,
+> bounded and confidence-rated, inside Safety. Data Conversion is now **Verified** (round-trip +
+> double reload). **65 tests.** See [docs/metadata-lineage-engine.md](docs/metadata-lineage-engine.md).
 >
 > Run the MCP server: `dotnet run --project src/SsisMcp.Server`. Tools & schemas:
 > [docs/mcp-tools.md](docs/mcp-tools.md).
