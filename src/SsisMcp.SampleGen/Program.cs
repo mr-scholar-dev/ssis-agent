@@ -60,7 +60,48 @@ namespace SsisMcp.SampleGen
             GenerateConnectionsSample(svc, outDir);
             GenerateDataFlowSample(svc, outDir);
             GeneratePracticaPackage(svc, outDir);
+            GenerateAdoNetSample(svc, outDir);
             return 0;
+        }
+
+        /// <summary>ADO.NET benchmark: DFTCliente with ADO NET Source -> Derived Column -> ADO NET
+        /// Destination (real metadata + mappings), unified layout, for VS 2022 visual confirmation.</summary>
+        private static void GenerateAdoNetSample(PackageService svc, string outDir)
+        {
+            try
+            {
+                using (var c = new System.Data.SqlClient.SqlConnection("Data Source=.;Initial Catalog=tempdb;Integrated Security=true;TrustServerCertificate=true;Connect Timeout=3"))
+                {
+                    c.Open();
+                    using (var cmd = new System.Data.SqlClient.SqlCommand(
+                        "IF OBJECT_ID('tempdb.dbo.AdoBenchSrc') IS NOT NULL DROP TABLE dbo.AdoBenchSrc;" +
+                        "IF OBJECT_ID('tempdb.dbo.AdoBenchDst') IS NOT NULL DROP TABLE dbo.AdoBenchDst;" +
+                        "CREATE TABLE dbo.AdoBenchSrc(Codigo int, Monto decimal(10,2)); INSERT dbo.AdoBenchSrc VALUES(1,100.00);" +
+                        "CREATE TABLE dbo.AdoBenchDst(Codigo int NULL, Impuesto decimal(10,2) NULL);", c)) cmd.ExecuteNonQuery();
+                }
+            }
+            catch (Exception) { Console.WriteLine("ADO.NET sample skipped (local SQL not reachable)."); return; }
+
+            var path = Path.GetFullPath(Path.Combine(outDir, "VisualBenchmark_AdoNet.dtsx"));
+            var pkg = new Dts.Package { Name = "AdoNetBenchmark" };
+            ConnectionFactory.AddAdoNetSql(pkg, "OrigenAdoNet", ".", "tempdb");
+            svc.Save(pkg, path);
+            new PackageEditor(svc).Apply(path, b => b.AddTask(TaskKinds.DataFlow, "DFTCliente"));
+            var r = new PackageEditor(svc).ApplyDataFlow(path, "DFTCliente", b =>
+            {
+                b.AddComponent(ComponentKinds.AdoNetSource, "AdoSrc");
+                b.ConfigureAdoNetSource("AdoSrc", "OrigenAdoNet", 1, "SELECT Codigo, Monto FROM dbo.AdoBenchSrc");
+                b.AddComponent(ComponentKinds.DerivedColumn, "Der"); b.Connect("AdoSrc", "Der"); b.ExposeAllInputColumns("Der");
+                b.ConfigureDerivedColumn("Der", "Impuesto", "(DT_NUMERIC,10,2)(Monto * 0.13)", Microsoft.SqlServer.Dts.Runtime.Wrapper.DataType.DT_NUMERIC, 0, 10, 2, 0);
+                b.AddComponent(ComponentKinds.AdoNetDestination, "AdoDst"); b.Connect("Der", "AdoDst");
+                b.ConfigureAdoNetDestination("AdoDst", "OrigenAdoNet", "dbo.AdoBenchDst");
+                new MappingEngine(b).AutoMap("AdoDst");
+            });
+            if (!r.Succeeded) { Console.WriteLine("   ADO.NET sample failed: " + r.ErrorCode + " " + r.Detail); return; }
+            var info = svc.InspectFile(path);
+            new SsisMcp.Designer.PackageLayoutEngine().Apply(path, info, SsisMcp.Designer.LayoutMode.Relayout);
+            Console.WriteLine($"Generated: {path}  (ADO NET Source->Derived->ADO NET Destination; validate " + svc.Validate(svc.Load(path)) + ")");
+            Console.WriteLine("   Open in VS 2022; double-click DFTCliente; open ADO NET Destination -> Mappings to see the column mappings.");
         }
 
         /// <summary>

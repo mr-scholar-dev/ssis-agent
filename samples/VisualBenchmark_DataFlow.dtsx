@@ -1,23 +1,23 @@
 <?xml version="1.0"?>
 <DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
   DTS:refId="Package"
-  DTS:CreationDate="8/23/2026 11:25:41 AM"
+  DTS:CreationDate="8/23/2026 11:39:48 AM"
   DTS:CreationName="Microsoft.Package"
   DTS:CreatorComputerName="DESKTOP-VP44JKB"
   DTS:CreatorName="DESKTOP-VP44JKB\serra"
-  DTS:DTSID="{58044B9F-FE3D-4B17-80C6-036835AB49D3}"
+  DTS:DTSID="{F7379FCC-034D-46F1-B508-CFFD2B820A64}"
   DTS:ExecutableType="Microsoft.Package"
   DTS:LastModifiedProductVersion="17.0.1000.7"
   DTS:LocaleID="1033"
   DTS:ObjectName="DataFlowBenchmark"
-  DTS:VersionGUID="{3F2315F7-4203-40E2-87FE-BD7F20208BA7}">
+  DTS:VersionGUID="{D1C461E6-468B-4A11-A6E9-7937E7D49903}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[Db]"
       DTS:CreationName="OLEDB"
-      DTS:DTSID="{1B9F557F-333F-4336-965C-98AB3FA27028}"
+      DTS:DTSID="{181CE179-3E22-4BB3-AFB7-B58A0864519C}"
       DTS:ObjectName="Db">
       <DTS:ObjectData>
         <DTS:ConnectionManager
@@ -32,7 +32,7 @@
     <DTS:Executable
       DTS:refId="Package\DFT"
       DTS:CreationName="Microsoft.Pipeline"
-      DTS:DTSID="{BF636DBB-95BF-451B-A58F-966266E6D3F9}"
+      DTS:DTSID="{ADD1BEE7-6F87-4B0D-872A-BAA685918AE2}"
       DTS:ExecutableType="Microsoft.Pipeline"
       DTS:LocaleID="-1"
       DTS:ObjectName="DFT"

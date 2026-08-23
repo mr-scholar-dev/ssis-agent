@@ -1,0 +1,28 @@
+<Project>
+  <!--
+    ADO NET Source/Destination (managed adapters) acquire metadata via Microsoft.Data.SqlClient 5.0.
+    In net48 that closure must sit in the app output directory (NuGet deployment model) + binding
+    redirects (App.config). This target copies the exact closure from the SSDT SQLCommon folder to
+    $(OutDir). Import in executables/test projects that exercise ADO NET metadata.
+    Paths are wildcarded across VS 2022 editions/versions.
+  -->
+  <ItemGroup>
+    <AdoNetClosure Include="$(ProgramFiles)\Microsoft Visual Studio\2022\*\Common7\IDE\CommonExtensions\Microsoft\SSIS\*\Extensions\SQLCommon\Microsoft.Data.SqlClient.dll" />
+    <AdoNetClosure Include="$(ProgramFiles)\Microsoft Visual Studio\2022\*\Common7\IDE\CommonExtensions\Microsoft\SSIS\*\Extensions\SQLCommon\Microsoft.Data.SqlClient.SNI.x64.dll" />
+    <AdoNetClosure Include="$(ProgramFiles)\Microsoft Visual Studio\2022\*\Common7\IDE\CommonExtensions\Microsoft\SSIS\*\Extensions\SQLCommon\System.Runtime.CompilerServices.Unsafe.dll" />
+    <AdoNetClosure Include="$(ProgramFiles)\Microsoft Visual Studio\2022\*\Common7\IDE\CommonExtensions\Microsoft\SSIS\*\Extensions\SQLCommon\System.Memory.dll" />
+    <AdoNetClosure Include="$(ProgramFiles)\Microsoft Visual Studio\2022\*\Common7\IDE\CommonExtensions\Microsoft\SSIS\*\Extensions\SQLCommon\System.Buffers.dll" />
+    <AdoNetClosure Include="$(ProgramFiles)\Microsoft Visual Studio\2022\*\Common7\IDE\CommonExtensions\Microsoft\SSIS\*\Extensions\SQLCommon\System.Numerics.Vectors.dll" />
+    <AdoNetClosure Include="$(ProgramFiles)\Microsoft Visual Studio\2022\*\Common7\IDE\CommonExtensions\Microsoft\SSIS\*\Extensions\SQLCommon\System.Threading.Tasks.Extensions.dll" />
+    <AdoNetClosure Include="$(ProgramFiles)\Microsoft Visual Studio\2022\*\Common7\IDE\CommonExtensions\Microsoft\SSIS\*\Extensions\SQLCommon\Microsoft.Bcl.AsyncInterfaces.dll" />
+    <AdoNetClosure Include="$(ProgramFiles)\Microsoft Visual Studio\2022\*\Common7\IDE\CommonExtensions\Microsoft\SSIS\*\Extensions\SQLCommon\System.Diagnostics.DiagnosticSource.dll" />
+    <AdoNetClosure Include="$(ProgramFiles)\Microsoft Visual Studio\2022\*\Common7\IDE\CommonExtensions\Microsoft\SSIS\*\Extensions\SQLCommon\System.Text.Json.dll" />
+    <AdoNetClosure Include="$(ProgramFiles)\Microsoft Visual Studio\2022\*\Common7\IDE\CommonExtensions\Microsoft\SSIS\*\Extensions\SQLCommon\System.Text.Encodings.Web.dll" />
+    <AdoNetClosure Include="$(ProgramFiles)\Microsoft Visual Studio\2022\*\Common7\IDE\CommonExtensions\Microsoft\SSIS\*\Extensions\SQLCommon\Microsoft.Identity.Client.dll" />
+    <AdoNetClosure Include="$(ProgramFiles)\Microsoft Visual Studio\2022\*\Common7\IDE\CommonExtensions\Microsoft\SSIS\*\Extensions\SQLCommon\Azure.Core.dll" />
+  </ItemGroup>
+  <Target Name="CopyAdoNetSqlClientClosure" AfterTargets="Build;Publish">
+    <Copy SourceFiles="@(AdoNetClosure)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true"
+          Condition="'@(AdoNetClosure)' != ''" ContinueOnError="true" />
+  </Target>
+</Project>

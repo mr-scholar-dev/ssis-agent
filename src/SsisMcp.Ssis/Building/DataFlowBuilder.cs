@@ -199,9 +199,11 @@ namespace SsisMcp.Ssis.Building
             }
             catch (System.IO.FileNotFoundException ex) when (ex.Message.IndexOf("Microsoft.Data.SqlClient", System.StringComparison.OrdinalIgnoreCase) >= 0)
             {
+                // Only when the SqlClient closure is NOT deployed to the app dir + binding redirects
+                // (see build/AdoNet.SqlClient.targets + App.config). Then metadata truly can't load.
                 throw new BuilderException(BuilderErrorCode.UnsupportedEnvironment,
-                    $"ADO NET '{name}' metadata acquisition requires the SSDT host assembly context " +
-                    "(Microsoft.Data.SqlClient binding closure) which is not resolvable on a standalone net48 host: " + ex.Message);
+                    $"ADO NET '{name}' metadata needs the Microsoft.Data.SqlClient closure in the app dir " +
+                    "(import build/AdoNet.SqlClient.targets + App.config binding redirects): " + ex.Message);
             }
             catch (System.Exception ex) when (ex.GetType().Name == "COMException" || ex is InvalidOperationException)
             {

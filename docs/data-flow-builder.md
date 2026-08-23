@@ -54,7 +54,7 @@ dimension and `EnvironmentBlocked` for the execution dimension.
 | OLE DB Source (SQL command / table) | StructurallyVerified | EnvironmentBlocked |
 | OLE DB Destination (+ AutoMap) | StructurallyVerified | EnvironmentBlocked |
 | **ADO.NET connection manager** (SqlClient) | StructurallyVerified | EnvironmentBlocked |
-| **ADO NET Source/Destination** (managed adapters) | Structure StructurallyVerified; **metadata EnvironmentBlocked**\*\* | EnvironmentBlocked |
+| **ADO NET Source/Destination** (managed adapters, **real metadata + mappings**) | StructurallyVerified | EnvironmentBlocked |
 | Derived Column (`Impuesto=(DT_NUMERIC,10,2)(Monto*0.13)`) | StructurallyVerified | EnvironmentBlocked |
 | Conditional Split (case + default + upstream expression) | StructurallyVerified | EnvironmentBlocked |
 | Data Conversion (+ Metadata/Lineage rebind on reload) | StructurallyVerified | EnvironmentBlocked |
@@ -131,12 +131,14 @@ see the Match/No-Match topology without reading XML.
   **assembly-qualified** (managed, not native monikers), centralized in the pipeline catalog. They
   create + `ProvideComponentProperties` + set props (`AccessMode`/`SqlCommand`/`TableOrViewName`,
   dest `TableOrViewName`/`BatchSize`) + save/reload/inspect (SSIS normalizes the class id to a CLSID).
-- \*\* **Metadata acquisition is EnvironmentBlocked**: the v17 ADO NET adapter's `ReinitializeMetaData`
-  requires **Microsoft.Data.SqlClient 5.0** and its net48 binding-redirect closure (BCL shims,
-  Identity, native SNI) that only exist in the SSDT/VS process. `SsisAssemblyResolver` makes the
-  SQLCommon assemblies discoverable, but net48 still needs binding redirects for the full closure, so
-  standalone metadata acquisition fails — surfaced as a **structured `UnsupportedEnvironment`** error,
-  never faked. (Fix path: add binding redirects to the MCP server's app.config / run inside SSDT context.)
+- **Metadata acquisition — UNBLOCKED (StructurallyVerified):** the v17 ADO NET adapter's
+  `ReinitializeMetaData` needs the **Microsoft.Data.SqlClient 5.0** closure. In net48 this requires
+  (1) the closure DLLs in the app output dir — **`build/AdoNet.SqlClient.targets`** copies them from
+  the SSDT SQLCommon folder — and (2) **binding redirects** in **`App.config`** (mirroring
+  devenv.exe.config). With both, `ReinitializeMetaData` returns real columns, `AutoMap` maps them, and
+  the chain validates + round-trips. Verified benchmarks: `ADO NET Source → Derived Column → ADO NET
+  Destination` and `ADO NET Source → Lookup → ADO NET Destination` (both StructurallyVerified). The
+  `SsisAssemblyResolver` remains as a secondary probe. Standalone execution stays EnvironmentBlocked.
 - **Contrast test**: the OLE DB family *does* acquire metadata + map columns on this host, proving the
   inspector/mapping engine handle both families and isolating the blocker to ADO NET's SqlClient closure.
 

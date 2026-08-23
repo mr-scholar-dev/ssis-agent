@@ -11,4 +11,5 @@
     <ProjectReference Include="..\SsisMcp.Ssis\SsisMcp.Ssis.csproj" />
     <ProjectReference Include="..\SsisMcp.Designer\SsisMcp.Designer.csproj" />
   </ItemGroup>
+  <Import Project="..\..\build\AdoNet.SqlClient.targets" />
 </Project>

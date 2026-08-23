@@ -24,6 +24,9 @@ namespace SsisMcp.Ssis
         /// <summary>Diagnostics: last error encountered while pre-loading (for probes/tests).</summary>
         public static string? LastError { get; private set; }
 
+        /// <summary>Diagnostics: simple names the resolver was asked for and whether it satisfied them.</summary>
+        public static readonly List<string> ResolveLog = new List<string>();
+
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern bool SetDllDirectory(string lpPathName);
 
@@ -63,17 +66,22 @@ namespace SsisMcp.Ssis
         {
             var simpleName = new AssemblyName(args.Name).Name;
             if (string.IsNullOrEmpty(simpleName)) return null;
-            if (Cache.TryGetValue(simpleName!, out var cached)) return cached;
+            if (Cache.TryGetValue(simpleName!, out var cached)) { ResolveLog.Add(simpleName + "=cache"); return cached; }
+            // Prefer an already-loaded assembly of the same simple name (any version) — avoids
+            // FileLoadException from loading a second copy of a BCL shim already bound by the runtime.
+            var loaded = AppDomain.CurrentDomain.GetAssemblies()
+                .FirstOrDefault(a => string.Equals(a.GetName().Name, simpleName, StringComparison.OrdinalIgnoreCase));
+            if (loaded != null) { Cache[simpleName!] = loaded; ResolveLog.Add(simpleName + "=loaded"); return loaded; }
             foreach (var dir in _dirs)
             {
                 var candidate = Path.Combine(dir, simpleName + ".dll");
                 if (File.Exists(candidate))
                 {
-                    try { return Assembly.LoadFrom(candidate); }
-                    catch (BadImageFormatException) { }
-                    catch (FileLoadException) { }
+                    try { var a = Assembly.LoadFrom(candidate); ResolveLog.Add(simpleName + "=file"); Cache[simpleName!] = a; return a; }
+                    catch (Exception ex) { ResolveLog.Add(simpleName + "=ERR:" + ex.GetType().Name); return null; }
                 }
             }
+            ResolveLog.Add(simpleName + "=miss");
             return null;
         }
 
