@@ -93,6 +93,12 @@ endpoints. The planner discovers the files, infers name/type mappings (adding Da
 safe), and either **builds + executes + verifies** the package or returns **questions** for anything it
 cannot determine from the files (never inventing a mapping or business rule).
 
+## Classroom / Exam Prompts
+
+Reusable, domain-neutral prompts for using SSIS Agent MCP in class (analyze, build, fix, review,
+exam mode, quick) — identical for **Claude Code** and **Codex** against the same `ssis` server. See
+[prompts/](prompts/README.md).
+
 ## Limitations (V1)
 
 - The planner infers by **name + type**. Semantic renames, business rules (derived columns, splits,
