@@ -106,13 +106,15 @@ namespace SsisMcp.UnitTests.VisualStudio
         }
 
         [Fact]
-        public void Real_host_detection_reports_no_designer_capable_instance()
+        public void Real_host_detection_finds_a_designer_capable_vs2022()
         {
-            // Honest environment check on THIS host: instances exist but none can open .dtproj
-            // (VS2022 is Build Tools; VS2026 lacks the SSIS Projects extension).
+            // After installing VS 2022 + SSIS Projects, a VS2022 instance must be Designer-ready.
             var instances = new WindowsVisualStudioLocator().DetectAll();
             Assert.NotEmpty(instances);
-            Assert.DoesNotContain(instances, i => i.CanOpenDtproj);
+            Assert.Contains(instances, i => i.Generation == TargetIde.VS2022
+                && i.SsisDesignerAvailable && i.DesignerLayoutTesting == "Ready");
+            // Policy holds: no VS2026 instance is Designer-capable.
+            Assert.DoesNotContain(instances, i => i.Generation == TargetIde.VS2026 && i.SsisDesignerAvailable);
         }
     }
 }

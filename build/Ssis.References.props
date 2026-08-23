@@ -1,15 +1,18 @@
 <Project>
-  <!-- Shared SSIS assembly references. The .NET SDK resolver does not probe the legacy GAC,
-       so we HintPath the physical GAC files, discovering the version-stamped folder by wildcard
-       instead of hard-coding version/publicKeyToken. Central place for the version-adapter work. -->
+  <!-- Shared SSIS assembly references. The .NET SDK resolver does not probe the legacy GAC, so we
+       HintPath the physical GAC files. Installing SSDT/SSIS Projects added the v13 (SSIS 2016)
+       assemblies alongside v17, so the wildcard is pinned to the bound build-runtime MAJOR ($(SsisBuildMajor),
+       default 17) — otherwise a multi-version match would make HintPath a ';'-joined (invalid) list.
+       Changing $(SsisBuildMajor) re-binds to a different installed runtime (e.g. 13 = SSIS 2016). -->
   <PropertyGroup>
     <_GacMsil>$(WinDir)\Microsoft.NET\assembly\GAC_MSIL</_GacMsil>
     <_Gac64>$(WinDir)\Microsoft.NET\assembly\GAC_64</_Gac64>
+    <SsisBuildMajor Condition="'$(SsisBuildMajor)' == ''">17</SsisBuildMajor>
   </PropertyGroup>
   <ItemGroup>
-    <_ManagedDts Include="$(_GacMsil)\Microsoft.SqlServer.ManagedDTS\**\Microsoft.SqlServer.ManagedDTS.dll" />
-    <_PipelineWrap Include="$(_GacMsil)\Microsoft.SqlServer.DTSPipelineWrap\**\Microsoft.SqlServer.DTSPipelineWrap.dll" />
-    <_RuntimeWrap Include="$(_Gac64)\Microsoft.SqlServer.DTSRuntimeWrap\**\Microsoft.SqlServer.DTSRuntimeWrap.dll" />
+    <_ManagedDts Include="$(_GacMsil)\Microsoft.SqlServer.ManagedDTS\v4.0_$(SsisBuildMajor).*__*\Microsoft.SqlServer.ManagedDTS.dll" />
+    <_PipelineWrap Include="$(_GacMsil)\Microsoft.SqlServer.DTSPipelineWrap\v4.0_$(SsisBuildMajor).*__*\Microsoft.SqlServer.DTSPipelineWrap.dll" />
+    <_RuntimeWrap Include="$(_Gac64)\Microsoft.SqlServer.DTSRuntimeWrap\v4.0_$(SsisBuildMajor).*__*\Microsoft.SqlServer.DTSRuntimeWrap.dll" />
     <Reference Include="Microsoft.SqlServer.ManagedDTS">
       <HintPath>@(_ManagedDts)</HintPath>
       <Private>false</Private>

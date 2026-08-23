@@ -92,14 +92,26 @@ namespace SsisMcp.VisualStudioBridge
 
         private static bool DefaultHasSsisDesigner(string installationPath)
         {
-            var ext = Path.Combine(installationPath, @"Common7\IDE\Extensions");
-            if (!Directory.Exists(ext)) return false;
-            try
+            // The SSIS Projects extension installs the designer under CommonExtensions\Microsoft\SSIS
+            // (not the per-user Extensions folder). Check both, plus the per-user extension store.
+            var candidates = new[]
             {
-                return Directory.EnumerateFiles(ext, "Microsoft.DataTransformationServices.Design.dll", SearchOption.AllDirectories).Any();
+                Path.Combine(installationPath, @"Common7\IDE\CommonExtensions\Microsoft\SSIS"),
+                Path.Combine(installationPath, @"Common7\IDE\CommonExtensions"),
+                Path.Combine(installationPath, @"Common7\IDE\Extensions"),
+            };
+            foreach (var dir in candidates)
+            {
+                if (!Directory.Exists(dir)) continue;
+                try
+                {
+                    if (Directory.EnumerateFiles(dir, "Microsoft.DataTransformationServices.Design.dll", SearchOption.AllDirectories).Any())
+                        return true;
+                }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
             }
-            catch (IOException) { return false; }
-            catch (UnauthorizedAccessException) { return false; }
+            return false;
         }
     }
 
