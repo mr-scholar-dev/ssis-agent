@@ -73,8 +73,20 @@ ExecutionVerified           = pending (see note)
 > through the SSDT/DtsDebugHost context rather than requiring a Standard+ standalone license.
 > (Data Flow with transforms still to be confirmed this way.)
 
-Data Flow designer layout (left→right, Match/No-Match branches) and its visual confirmation are the
-remaining part of this gate (`DataFlowLayoutEngine` not yet implemented).
+## ✅ Data Flow DesignerLayout VERIFIED (VS 2022, 2026-08-23)
+
+An MCP-generated + MCP-laid-out branching data flow (`samples/VisualBenchmark_DataFlow.dtsx`,
+`SsisMcp.Designer.DataFlowLayoutEngine`) was opened in the VS 2022 Data Flow designer and **visually
+confirmed**: `Src ↓ CS` then two separated branches `Valid → DstValid` and `Conditional Split Default
+Output → DstDefault` at the same depth, top→bottom (SSIS convention), no overlap, path labels shown,
+correct names, `Db` connection manager present.
+
+**The full Designer visual gate is CLOSED for VS 2022** — Control Flow and Data Flow both
+`DesignerLayoutVerified`. VS 2026 remains `EnvironmentBlocked` (no SSIS Projects extension).
+
+> Note on axis: the practice text said "left→right", but the SSIS Data Flow designer convention (and
+> the VS golden) is **top→bottom** (source at top, destinations at bottom); the engine follows the
+> observed convention. Branches spread on X.
 
 ## Target roles (Designer verification vs bridge)
 
