@@ -1,93 +1,148 @@
-# SSIS-Agent-MCP
+# SSIS Agent MCP — v1.0.0
 
-A local **Model Context Protocol (MCP)** server for Windows that lets an MCP-compatible agent
-inspect, build, validate, execute, diagnose and repair **SQL Server Integration Services (SSIS)**
-projects and packages — programmatically, through the **SSIS Object Model / Runtime / Pipeline
-APIs**, not through fragile UI automation.
+A local **Model Context Protocol (MCP)** server for Windows that lets any MCP client (Claude Code,
+Codex, …) **inspect, build, validate, execute, verify, diagnose and repair SQL Server Integration
+Services (SSIS) packages** — programmatically through the SSIS Object Model / Runtime / Pipeline APIs,
+never through fragile UI automation. It also ships an **Autonomous Planner** that turns *"analyze these
+files and build this SSIS practice"* into a real, executed, verified `.dtsx`, using only the public MCP
+tools.
 
-> Status: **Fase 0, 1, 4, 2/3 and 5 (Control Flow Builder) complete.** Environment detection, a real
-> SSIS Object Model roundtrip, the transactional Safety layer, full inspection, a **read-only MCP
-> server** (5 tools), a Safety-gated **Control Flow builder**, and a Safety-gated **Data Flow
-> builder** (OLE DB source/dest, Derived Column, Conditional Split, mapping engine — round-tripped
-> with lineage) all pass against the installed v17 runtime (**61 tests**). Write tools remain
-> unexposed by design. Data Flow capability matrix: [docs/data-flow-builder.md](docs/data-flow-builder.md).
->
-> **Fase 12 — Metadata & Lineage engine** resolves the generic `save→reload→stale-lineage`
-> (`VS_NEEDSNEWMETADATA`) bug by rebinding references to current lineage ids by stable identity,
-> bounded and confidence-rated, inside Safety. Data Conversion round-trip fixed (double reload).
-> Data Flow now also covers **Lookup**, **Excel (.xlsx/.xls via ACE)**, **Access (ACE OLE DB)** and
-> **Flat File** — all `StructurallyVerified`. **72 tests.** No component is `ExecutionVerified`:
-> Data Flow execution is `EnvironmentBlocked` by SSIS edition licensing on this host
-> (`execution.dataFlow.available=false`). See [docs/data-flow-builder.md](docs/data-flow-builder.md).
->
-> Run the MCP server: `dotnet run --project src/SsisMcp.Server`. Tools & schemas:
-> [docs/mcp-tools.md](docs/mcp-tools.md).
->
-> Visual Studio **2022 and 2026** are officially supported from the design; adapter contracts are
-> locked (`IVisualStudioAdapter`, `ISsisVersionAdapter` — separate responsibilities). See
-> [docs/visual-studio-adapters.md](docs/visual-studio-adapters.md).
+## What it does
 
-## Fase 1 proof of concept
+- **Analyze** SQL scripts, Excel workbooks and Access databases (schemas, columns, row counts).
+- **Build** packages: connection managers, variables, Control Flow tasks, precedence, Data Flow Tasks
+  with Sources / Destinations / transformations (Derived Column, Data Conversion, Conditional Split,
+  Lookup), column mappings, and **precompiled Script Tasks**.
+- **Lay out** the Control Flow and every internal Data Flow (top→bottom) so packages open cleanly in
+  Visual Studio.
+- **Validate** (real `Package.Validate`), inspect **metadata & lineage**, **execute** with a licensed
+  `dtexec`, and **verify destination data** (row counts, values) — not just exit codes.
+- Everything mutating goes through a transactional **Safety layer**: `preview → apply → validate →
+  commit | rollback → reload → re-inspect`, with backups and **undo**.
+- **Autonomous Planner**: discover → analyze → plan → clarify → preview → apply → validate → execute →
+  verify → repair → complete. It **never invents** columns/mappings/rules/connections; when the inputs
+  are insufficient it **asks** instead of guessing.
 
-```powershell
-dotnet run --project src/SsisMcp.SsisPoc -c Debug        # roundtrips a package, validates, reports
-dotnet test tests/SsisMcp.IntegrationTests -c Debug      # same, as regression tests (real SSIS)
-```
+## Requirements
 
-## Why the API-first approach
+- Windows x64, **.NET Framework 4.8**.
+- **SQL Server Integration Services** (licensed shared feature) — required for `package.execute`, the
+  Script Task design-time (VSTA), and ADO.NET metadata/execution. Building / inspecting / validating /
+  layout / planning-to-Clarify work without it; execution then reports a structured `EnvironmentBlocked`.
+- SQL Server + the **ACE OLE DB** provider (x64) for Excel/Access sources.
+- To build from source: the .NET SDK. To just run it: the redistributable in `dist/ssis-mcp`.
 
-The core manipulates packages via `Microsoft.SqlServer.Dts.Runtime` / `...Dts.Pipeline`. Visual
-Studio is a *secondary* visual bridge, and UI automation is a last resort only. See
-[docs/architecture.md](docs/architecture.md).
+## Installation
 
-## Requirements (verified on the current dev machine)
-
-| Requirement | Needed | This machine |
-|---|---|---|
-| Windows 10/11 | yes | Windows 11 (build 26200) |
-| SSIS runtime (`Microsoft.SqlServer.ManagedDTS` in GAC) | **critical** | **v17.0.0.0 (SQL Server 2025 family)** |
-| .NET Framework 4.8 targeting pack | yes (SSIS assemblies are net48/COM) | present |
-| .NET 10 SDK (to drive `dotnet build/test`) | yes | 10.0.301 |
-| Visual Studio 2022 / 2026 | for the VS bridge (later phase) | 2026 (v18.7.3 Community) |
-| SSIS Projects extension | for in-VS editing | **not detected** |
-| ACE OLE DB (Excel/Access) | for Excel/Access sources | 12.0 + 16.0 present |
-| SQL Server OLE DB provider | for SQL sources | MSOLEDBSQL / 19 present |
-
-> **Important compatibility note:** the requested initial target was **SSIS 2016 (assembly v13)**,
-> but **only the v17 runtime is installed** here. See
-> [docs/ssis-versioning.md](docs/ssis-versioning.md) for what this means and the decision needed.
-
-## Build & run the environment probe (Milestone 0)
+**Redistributable (no source tree / SDK):** copy `dist/ssis-mcp` to the target PC and run:
 
 ```powershell
-dotnet build SSIS-Agent-MCP.sln -c Debug
-dotnet run --project src/SsisMcp.EnvProbe -c Debug
-dotnet test SSIS-Agent-MCP.sln -c Debug
+powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
-The probe prints a report and returns a non-zero exit code if a **critical** dependency
-(the SSIS runtime) is missing — it never continues silently.
+It runs an Environment Probe through the shipped server, writes client configs with the target
+machine's absolute path, and registers `ssis` with Codex/Claude Code if their CLIs are present. See
+[docs/mcp-install.md](docs/mcp-install.md). Uninstall: `uninstall.ps1`.
 
-## Layout
+**From source:** `powershell -ExecutionPolicy Bypass -File scripts\setup-mcp.ps1` (builds + writes
+`.mcp.json` and a Codex snippet). Rebuild the redistributable with `scripts\package-dist.ps1`.
+
+### Claude Code
+
+Project scope: the generated `.mcp.json` at the repo root is auto-discovered. User scope:
 
 ```
-src/
-  SsisMcp.Core/       DTOs, enums, version map, environment detector, contracts (net48)
-  SsisMcp.Ssis/       SSIS Object Model + Pipeline API: services & inspectors (net48)
-  SsisMcp.Safety/     transactional mutation gate: hash/backup/lock/audit (net48)
-  SsisMcp.Server/     read-only MCP stdio server (net48)
-  SsisMcp.EnvProbe/   Fase 0 console runner (net48, x64)
-  SsisMcp.SsisPoc/    Fase 1 SSIS roundtrip proof of concept
-tests/
-  SsisMcp.UnitTests/         version map, GAC scanner, safety pipeline, MCP dispatch
-  SsisMcp.IntegrationTests/  real SSIS: roundtrip, safety, inspection, server stdio, project
-docs/                        architecture, versioning, safety, tools, testing, VS adapters
+claude mcp add ssis --scope user -- "C:\path\to\ssis-mcp\bin\SsisMcp.Server.exe"
 ```
 
-Later phases add `SsisMcp.SqlServer`, `SsisMcp.Excel`, `SsisMcp.Access`, `SsisMcp.Planner`,
-and `SsisMcp.VisualStudioBridge` (VS 2022/2026 adapters).
+### Codex
 
-## Security
+```
+codex mcp add ssis -- "C:\path\to\ssis-mcp\bin\SsisMcp.Server.exe"
+```
 
-No credentials in code, commits, fixtures or logs. Destructive SQL tools are disabled by default.
-See [docs/safety-model.md](docs/safety-model.md).
+…or paste `config/codex-config.toml` into `%USERPROFILE%\.codex\config.toml`. Both clients launch the
+**same** server binary. stdout carries JSON-RPC only; logs go to stderr (and to `SSIS_MCP_LOG` if set).
+
+## Tools
+
+Read: `environment.detect`, `project.inspect`, `package.inspect`, `controlflow.inspect`,
+`dataflow.inspect`, `metadata.inspect`, `files.discover`, `sql.inspect`, `excel.inspect`,
+`access.inspect`.
+Build/run: `package.create`, `controlflow.apply`, `dataflow.apply`, `layout.apply`, `package.validate`,
+`package.execute`, `package.undo`, `connection.test`, `data.verify`.
+Orchestration: `plan.run` (the Autonomous Planner end to end).
+
+The write surface is composable: `controlflow.apply` / `dataflow.apply` take an `operations[]` op-DSL,
+each batch = one atomic Safety pass; `preview:true` is a validated dry-run. Full contract +
+granularity rationale: [docs/mcp-tools.md](docs/mcp-tools.md).
+
+## Autonomous Planner
+
+Provider-agnostic engine (`SsisMcp.Planner`) that drives only the public MCP tools. Explicit states,
+`Explicit` vs `InferredHigh/Low` provenance on every decision, ambiguity → question, bounded repair.
+Details + design: [docs/autonomous-planner.md](docs/autonomous-planner.md).
+
+### Example (from Claude Code / Codex)
+
+> "Analyze the files in `C:\work\practice` and build the SSIS package into `out.dtsx`, target the
+> local `Warehouse` DB."
+
+The client calls `plan.run` with the input dir, output path, and the target/source connection
+endpoints. The planner discovers the files, infers name/type mappings (adding Data Conversions where
+safe), and either **builds + executes + verifies** the package or returns **questions** for anything it
+cannot determine from the files (never inventing a mapping or business rule).
+
+## Limitations (V1)
+
+- The planner infers by **name + type**. Semantic renames, business rules (derived columns, splits,
+  lookups), multi-source-into-one-table (append/union), IDENTITY-preserving loads, headerless Excel
+  sheets, and FK-graph ordering beyond declaration order are **not inferred** — they surface as
+  questions or require explicit hints. (These build fine via the granular tools; the planner just
+  won't guess them.) Tracked in [docs/V2-future-work.md](docs/V2-future-work.md).
+- Native XML export is not an SSIS destination; use a Script Task (`ConfigureScriptTask`) — see the
+  Fase 28 benchmark.
+- Execution/ADO.NET/Script Task require the licensed Integration Services feature; otherwise those
+  steps report `EnvironmentBlocked` (never faked).
+
+## Troubleshooting
+
+- **Client shows no tools** → verify the `command` path exists; run the exe manually (it blocks reading
+  stdin and prints a startup line to **stderr**). Never let anything write to stdout but JSON-RPC.
+- **`package.execute` → EnvironmentBlocked** → install the licensed Integration Services feature.
+- **ADO.NET metadata errors** → the `Microsoft.Data.SqlClient` closure must sit next to the exe (the
+  redistributable already includes it; `AdoNet.SqlClient.targets` handles source builds).
+- **Excel/Access fails** → install the x64 **ACE OLE DB** provider.
+- **Paths with spaces** → fully supported (paths travel as JSON strings, never through a shell).
+
+## Architecture
+
+```
+SsisMcp.Core        DTOs, interfaces, Safety contracts (no SSIS dependency)
+SsisMcp.Safety      transactional editor, backups, locks, audit, undo
+SsisMcp.Ssis        SSIS Object Model / Pipeline builders, inspectors, execution, lineage engine
+SsisMcp.Designer    Control Flow + Data Flow layout engines
+SsisMcp.Server      MCP server (JSON-RPC over stdio); the ONLY public interface
+SsisMcp.Planner     Autonomous Planner (drives the MCP tools via IMcpToolInvoker; no builder access)
+SsisMcp.VisualStudioBridge   VS 2022/2026 detection + adapters
+```
+
+Design docs: [Safety](docs/mcp-tools.md) · [Control Flow](docs/control-flow-builder.md) · [Data Flow](docs/data-flow-builder.md) ·
+[Metadata/Lineage](docs/metadata-lineage-engine.md) · [Execution](docs/execution.md) ·
+[VS adapters](docs/visual-studio-adapters.md) · [Planner](docs/autonomous-planner.md) ·
+[Fase 28 benchmark](docs/fase28-integracion-practica.md) · [Install](docs/mcp-install.md).
+
+## Tests
+
+**120 tests** (53 unit + 67 integration) green; solution builds with **0 warnings**. Coverage includes
+the Safety pipeline, Control/Data Flow builders, metadata/lineage repair, Script Task precompile,
+the MCP protocol over real stdio, the redistributable server, the planner on two distinct domains
+(Retail, HR), and the final vet-practice regression (planner reaches Clarify on the full practice;
+a real Access→Enfermedad slice executes + verifies + undoes). Execution/data-verify tests are portable
+(skip cleanly where a licensed host or SQL Server is absent).
+
+## Status
+
+**V1.0.0 — closed.** All critical acceptance gates pass end to end, from original files → planner →
+public MCP tools → `.dtsx` → layout → validate → execute → verify, including from the redistributable
+server. Non-critical enhancements are in [docs/V2-future-work.md](docs/V2-future-work.md).
