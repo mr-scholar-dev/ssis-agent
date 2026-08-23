@@ -15,6 +15,26 @@ namespace SsisMcp.EnvProbe
             IEnvironmentDetector detector = new WindowsEnvironmentDetector();
             var report = detector.Detect();
 
+            // Data Flow execution availability (license-gated on some hosts). Non-critical.
+            var execCheck = new CheckResult("execution.dataFlow", CheckStatus.Warn);
+            try
+            {
+                var host = new SsisMcp.Ssis.Execution.InProcessExecutionHost();
+                var available = host.CanExecuteDataFlow(out var reason);
+                execCheck.Status = available ? CheckStatus.Pass : CheckStatus.Warn;
+                execCheck.Detail = available
+                    ? "available"
+                    : "available = false; reason = " + reason;
+                execCheck.Data["available"] = available ? "true" : "false";
+                if (!available) execCheck.Data["reason"] = reason;
+            }
+            catch (Exception ex)
+            {
+                execCheck.Status = CheckStatus.Unknown;
+                execCheck.Detail = "probe error: " + ex.Message;
+            }
+            report.Checks.Add(execCheck);
+
             Console.WriteLine(report.ToDisplayString());
 
             if (!report.CoreUsable)
