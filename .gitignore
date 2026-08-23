@@ -33,3 +33,7 @@ appsettings.local.json
 *.secrets.json
 .env
 secrets/
+
+## Redistributable output — assembled by scripts/package-dist.ps1 (binaries + machine-specific config)
+dist/ssis-mcp/bin/
+dist/ssis-mcp/config/
