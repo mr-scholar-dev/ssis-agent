@@ -151,7 +151,7 @@ namespace SsisMcp.IntegrationTests
         }
 
         [Fact]
-        public void DataFlow_layout_positions_components_left_to_right_with_branches_and_stays_valid()
+        public void DataFlow_layout_positions_components_topbottom_with_branches_and_stays_valid()
         {
             if (!SqlUp()) return;
             var path = BuildBranchingDataFlow();
@@ -160,10 +160,10 @@ namespace SsisMcp.IntegrationTests
 
             var by = boxes.ToDictionary(b => b.Name, b => b);
             Assert.Equal(4, boxes.Count);
-            Assert.True(by["Src"].X < by["CS"].X);                       // left → right by depth
-            Assert.True(by["CS"].X < by["DstValid"].X);
-            Assert.Equal(by["DstValid"].X, by["DstDefault"].X);          // same layer
-            Assert.NotEqual(by["DstValid"].Y, by["DstDefault"].Y);       // branches separated on Y (no overlap)
+            Assert.True(by["Src"].Y < by["CS"].Y);                       // top → bottom by depth (SSIS convention)
+            Assert.True(by["CS"].Y < by["DstValid"].Y);
+            Assert.Equal(by["DstValid"].Y, by["DstDefault"].Y);          // same layer (both destinations)
+            Assert.NotEqual(by["DstValid"].X, by["DstDefault"].X);       // branches separated on X (no overlap)
 
             var xml = File.ReadAllText(path);
             Assert.Contains("<TaskHost design-time-name=\"Package\\DFT\">", xml);

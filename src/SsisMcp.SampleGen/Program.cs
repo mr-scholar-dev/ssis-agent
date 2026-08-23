@@ -112,7 +112,7 @@ namespace SsisMcp.SampleGen
             {
                 var info2 = svc.InspectFile(path);
                 var boxes = new SsisMcp.Designer.DataFlowLayoutEngine().Apply(path, info2, SsisMcp.Designer.LayoutMode.Relayout);
-                Console.WriteLine($"   Data Flow layout applied ({boxes.Count} components positioned left->right).");
+                Console.WriteLine($"   Data Flow layout applied ({boxes.Count} components positioned top->bottom, branches spread on X).");
                 Console.WriteLine("   Post-layout validate: " + svc.Validate(svc.Load(path)));
                 var df = info2.DataFlows.First();
                 Console.WriteLine("   components: " + string.Join(", ", df.Components.Select(c => c.Name)));

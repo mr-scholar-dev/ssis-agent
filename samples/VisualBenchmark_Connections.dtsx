@@ -1,23 +1,23 @@
 <?xml version="1.0"?>
 <DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
   DTS:refId="Package"
-  DTS:CreationDate="8/23/2026 11:10:26 AM"
+  DTS:CreationDate="8/23/2026 11:18:24 AM"
   DTS:CreationName="Microsoft.Package"
   DTS:CreatorComputerName="DESKTOP-VP44JKB"
   DTS:CreatorName="DESKTOP-VP44JKB\serra"
-  DTS:DTSID="{594D4D71-4A89-4218-AD7F-CE903A4743E9}"
+  DTS:DTSID="{CB29FF91-080C-45A9-973D-D36FE172C795}"
   DTS:ExecutableType="Microsoft.Package"
   DTS:LastModifiedProductVersion="17.0.1000.7"
   DTS:LocaleID="1033"
   DTS:ObjectName="ConnectionManagers"
-  DTS:VersionGUID="{E1C0F8A5-C25F-4508-9FFA-7651F38FAF21}">
+  DTS:VersionGUID="{C92A3636-B967-44B7-9790-8CA10E7F26A9}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[CargaAccess]"
       DTS:CreationName="OLEDB"
-      DTS:DTSID="{E2706DC2-94E1-47BC-AC81-973819882493}"
+      DTS:DTSID="{DA588633-F664-4170-8E64-6E7B23C21717}"
       DTS:ObjectName="CargaAccess">
       <DTS:ObjectData>
         <DTS:ConnectionManager
@@ -29,7 +29,7 @@
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[CargaExcel]"
       DTS:CreationName="EXCEL"
-      DTS:DTSID="{1A0757A1-7AD1-4ADC-9300-9C2CCE087145}"
+      DTS:DTSID="{DFE0E73F-D914-4970-B70B-6992543147C7}"
       DTS:ObjectName="CargaExcel">
       <DTS:ObjectData>
         <DTS:ConnectionManager
@@ -41,7 +41,7 @@
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[CargaPlana]"
       DTS:CreationName="FLATFILE"
-      DTS:DTSID="{FBA8B444-29B9-48B0-B5D6-FD88870E3E7A}"
+      DTS:DTSID="{C1B86722-907A-4B01-A215-DEE2932B64C9}"
       DTS:ObjectName="CargaPlana">
       <DTS:ObjectData>
         <DTS:ConnectionManager
@@ -59,7 +59,7 @@
               DTS:ColumnDelimiter="_x002C_"
               DTS:DataType="3"
               DTS:ObjectName="Codigo"
-              DTS:DTSID="{4A25D42B-1275-490B-A4B0-0CEE287EF8B0}"
+              DTS:DTSID="{623D8093-009A-4D1E-80B9-87F222C81DF6}"
               DTS:CreationName="" />
             <DTS:FlatFileColumn
               DTS:ColumnType="Delimited"
@@ -67,7 +67,7 @@
               DTS:MaximumWidth="50"
               DTS:DataType="129"
               DTS:ObjectName="Nombre"
-              DTS:DTSID="{1B5EDAFB-0CEA-4ED9-B2F8-B3D32E301405}"
+              DTS:DTSID="{CA4F4A8E-2236-4221-9F05-FD372C00A992}"
               DTS:CreationName="" />
           </DTS:FlatFileColumns>
         </DTS:ConnectionManager>
@@ -76,7 +76,7 @@
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[OrigenAdoNet]"
       DTS:CreationName="ADO.NET:System.Data.SqlClient.SqlConnection, System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-      DTS:DTSID="{E15446C5-2867-467C-A57D-1F30FA9C0915}"
+      DTS:DTSID="{F7D0F308-4D99-423D-ACDE-01A1991AEF2A}"
       DTS:ObjectName="OrigenAdoNet">
       <DTS:ObjectData>
         <DTS:ConnectionManager
@@ -86,7 +86,7 @@
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[PracticaOrigen]"
       DTS:CreationName="OLEDB"
-      DTS:DTSID="{1D776424-E0A9-42B0-A2DC-B881C15F5BD5}"
+      DTS:DTSID="{88736537-899D-4237-811F-893253DA89E5}"
       DTS:ObjectName="PracticaOrigen">
       <DTS:ObjectData>
         <DTS:ConnectionManager
@@ -98,7 +98,7 @@
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[Vet]"
       DTS:CreationName="OLEDB"
-      DTS:DTSID="{E97F4942-CECF-4BDE-94E2-9D30F1D105F8}"
+      DTS:DTSID="{377D0C13-78F2-41EB-8690-8431AAF411F8}"
       DTS:ObjectName="Vet">
       <DTS:ObjectData>
         <DTS:ConnectionManager

@@ -10,7 +10,7 @@ using SsisMcp.Core.Packages;
 namespace SsisMcp.Designer
 {
     /// <summary>
-    /// Computes a deterministic LEFT→RIGHT Data Flow layout for each Data Flow Task's pipeline and
+    /// Computes a deterministic TOP→BOTTOM Data Flow layout for each Data Flow Task's pipeline and
     /// writes it into <c>DesignTimeProperties</c>. Grounded on a real VS 2022 golden
     /// (tests/fixtures/golden/vs2022-data-flow.dtsx): layout is two-level —
     ///   &lt;Package&gt;…&lt;NodeLayout Id="Package\&lt;DFT&gt;"/&gt; (the DFT in the control flow), and
@@ -37,7 +37,7 @@ namespace SsisMcp.Designer
             return boxes;
         }
 
-        /// <summary>Left→right layered positions for every component of every data flow.</summary>
+        /// <summary>Top→bottom layered positions (SSIS data-flow convention) for every component.</summary>
         public IReadOnlyList<NodeBox> Compute(PackageInfo info)
         {
             var all = new List<NodeBox>();
@@ -72,8 +72,8 @@ namespace SsisMcp.Designer
                         {
                             Id = "Package\\" + df.TaskName + "\\" + ordered[i],
                             Name = ordered[i],
-                            X = MarginX + layer.Key * (NodeW + HGap),   // left → right by depth
-                            Y = MarginY + i * (NodeH + VGap),           // siblings/branches spread on Y
+                            X = MarginX + i * (NodeW + HGap),           // siblings/branches spread across X
+                            Y = MarginY + layer.Key * (NodeH + VGap),   // top → bottom by depth (SSIS convention)
                             W = NodeW,
                             H = NodeH
                         });
