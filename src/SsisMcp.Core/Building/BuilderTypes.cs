@@ -23,7 +23,9 @@ namespace SsisMcp.Core.Building
         IncompatibleType,
         InvalidLineageState,
         StaleMetadata,
-        UnsupportedEnvironment
+        UnsupportedEnvironment,
+        // Script Task specific
+        ScriptCompileFailed
     }
 
     /// <summary>Thrown by builder operations for pre-commit, structurally-detectable failures.</summary>

@@ -35,7 +35,26 @@ Values: `Success`, `Failure`, `Completion`. Evaluation ops: `Constraint`, `Expre
 | Sequence Container | ✅ | ✅ | verified nesting of a configured child |
 | For Loop | ✅ | ⚠️ needs config | creation verified; empty loop fails validation (needs EvalExpression) — expected |
 | Foreach Loop | ✅ | ✅ empty | **partial**: enumerator NOT yet exercised — do not treat as full support |
-| Script Task | ✅ | ✅ | **verified once VSTA present**: after installing the Integration Services shared feature, `Add("Microsoft.ScriptTask")` creates + commits. Where VSTA is absent it is reported `Unsupported` (`0x80070057`) — portable, not faked. |
+| Script Task | ✅ | ✅ | **create + configure + PRECOMPILE** (see below). Where VSTA is absent it is reported `Unsupported`/`UnsupportedEnvironment` — portable, not faked. |
+
+## Script Task capability (reusable, not practice-specific)
+
+`ConfigureScriptTask(name, source, readOnlyVariables?, readWriteVariables?, references?, entryPoint?)`
+configures **and precompiles** a Script Task through the VSTA design-time, so a headless `dtexec`
+runs the compiled binary with no designer. Implemented in `ScriptTaskConfigurator` (reflection over
+the VSTA object model — no compile-time dependency), plus `ScriptTaskSource.CSharpMain(body, usings,
+extraMembers)` to build canonical source (use the `__NAMESPACE__` token where the project namespace
+goes; the configurator substitutes the real one).
+
+Supported: C# source, `ReadOnlyVariables`, `ReadWriteVariables`, extra assembly `references`
+(injected into the generated `.csproj`), custom `EntryPoint`, validation, save/reload, and headless
+`dtexec` execution. Structured errors: `UnsupportedEnvironment` when the VSTA/script design-time is
+not resolvable in-process, `ScriptCompileFailed` (with the compiler messages) when the C# fails to
+build. Verified sequence (SQL 2025 / VSTA 2022): `Initalize → LoadNewProject(template) →
+SaveProjectToStorage(seed) → replace ScriptMain.cs → LoadProjectFromStorage → Build → GetBuildErrors →
+SaveProjectToStorage`; the managed `ScriptTask` assembly is force-loaded so `InnerObject` resolves
+(otherwise it returns a raw `__ComObject` in some hosts). Tests: `ScriptTaskTests` (precompile +
+execute + verify file; invalid C# → structured error). Used by Fase 28 for the in-package XML export.
 
 ### Verified capabilities
 - Create + configure + connect + rename + remove + round-trip inspect for **Execute SQL Task**,

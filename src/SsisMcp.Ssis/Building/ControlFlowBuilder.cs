@@ -64,6 +64,26 @@ namespace SsisMcp.Ssis.Building
             return result;
         }
 
+        /// <summary>
+        /// Configures + PRECOMPILES a Script Task: C# source, ReadOnly/ReadWrite variables, and extra
+        /// assembly references. The compiled binary is persisted into the package so a headless
+        /// <c>dtexec</c> runs it with no designer. Reusable capability (not practice-specific). Throws
+        /// <see cref="BuilderErrorCode.UnsupportedEnvironment"/> when the VSTA design-time is absent and
+        /// <see cref="BuilderErrorCode.ScriptCompileFailed"/> (with messages) when the C# does not build.
+        /// Use the <c>__NAMESPACE__</c> token in the source where the project namespace goes.
+        /// </summary>
+        public ScriptTaskBuildResult ConfigureScriptTask(
+            string name, string source,
+            IEnumerable<string>? readOnlyVariables = null,
+            IEnumerable<string>? readWriteVariables = null,
+            IEnumerable<string>? references = null,
+            string entryPoint = "Main")
+        {
+            var th = RequireTaskHost(name);
+            return new ScriptTaskConfigurator().Configure(
+                th, source, readOnlyVariables, readWriteVariables, references, entryPoint);
+        }
+
         /// <summary>Sets a single task property (best-effort against host then inner object).</summary>
         public void SetTaskProperty(string name, string propertyName, object value)
         {

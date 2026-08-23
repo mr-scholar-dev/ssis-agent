@@ -51,6 +51,7 @@ SqlBorrar (Execute SQL)
   → DFTTipoCliente → DFTCliente → DFTMascota → DFTEnfermedad
   → DFTEnfermedadAccess → DFTMascotaAccess → DFTEnfermedadMascota
   → DFTReporte1 → DFTReporte2
+  → ScriptClienteXML → ScriptMascotaXML          (XML export — in-package, precompiled Script Tasks)
 ```
 
 The chain enforces the FK load order (TipoCliente before Cliente before Mascota; Enfermedad + Mascota
@@ -79,6 +80,17 @@ is required for every string column (`DT_WSTR/DT_STR`).
 | **DFTReporte1** | ADO.NET `Vet` (Q1 join) | — | Excel `Reporte1$` (autoMap) |
 | **DFTReporte2** | ADO.NET `Vet` (Q2 join+`SUM`) | — | Excel `Reporte2$` (autoMap) |
 
+### Script Tasks (XML export — in-package)
+
+| Task | Reads | Does | Writes |
+|---|---|---|---|
+| **ScriptClienteXML** | vars `User::VetConn`, `User::OutDir` (ReadOnly) | `SELECT * FROM Cliente FOR XML RAW('Cliente'), ROOT('ClienteXML'), ELEMENTS` | `ClienteXML.xml` |
+| **ScriptMascotaXML** | same | `SELECT * FROM Mascota FOR XML RAW('Mascota'), ROOT('MascotaXML'), ELEMENTS` | `MascotaXML.xml` |
+
+Both are **precompiled C# Script Tasks** configured via the reusable `ControlFlowBuilder.ConfigureScriptTask`
+capability (see [control-flow-builder.md](control-flow-builder.md)). No external process — the XML is
+produced by the package's own `dtexec` run.
+
 Layout: unified Control Flow + per-DFT Data Flow via `PackageLayoutEngine` (top→bottom).
 
 ## Execution & business verification (licensed `dtexec` 17.0.1000.7)
@@ -96,6 +108,8 @@ Mascota id=1 = Duke   (id preserved 1..5 — semantic link intact)
 impuesto = costo*0.13  → 0 mismatches (e.g. 2000→260.00, 3000→390.00, 3250→422.50)
 reportes.xlsx: Reporte1=15 rows, Reporte2=5 rows (written by the package at runtime)
 Q1/Q2 joins resolve correctly (Duke→Moquillo,Gripe,Rabia; Duke total=14500)
+ClienteXML.xml: valid XML, <Cliente> count=5   (written by ScriptClienteXML in-package)
+MascotaXML.xml: valid XML, <Mascota> count=10  (written by ScriptMascotaXML in-package)
 ```
 
 Three verification levels for this package:
@@ -122,12 +136,11 @@ ExecutionVerified           = true   (executed via licensed dtexec + destination
 4. **`idTipo` 'F'/'O' → `idTipoCliente` 1/2** — the letter→id mapping (F=FRECUENTE=1, O=OCASIONAL=2) is
    an **inference** from the Excel `Tipo Cliente` sheet; the instructions don't state it explicitly.
    High confidence, but flagged.
-5. **XML export mechanism unspecified + SSIS/tooling gap** — SSIS has **no native XML destination**,
-   and the MCP builder exposes none; the instructions don't say how to produce the XML. So the package
-   does **not** produce the XML. `ClienteXML.xml` / `MascotaXML.xml` were generated **out-of-band via
-   `SELECT … FOR XML`** and are clearly labeled as such. A pure-SSIS route would be a Script Task
-   (now possible since VSTA is installed) + `FOR XML`, but injecting Script Task code is not yet a
-   builder capability. **← reported, not faked.**
+5. ~~**XML export**~~ **RESOLVED (in-package).** SSIS still has no native XML *destination*, but the XML
+   is now produced **inside the package** by two precompiled **Script Tasks** (`ScriptClienteXML`,
+   `ScriptMascotaXML`) that run `FOR XML` and write the files — via the new reusable
+   `ConfigureScriptTask` capability. No external process. The XML *mechanism* was unspecified by the
+   instructions; a Script Task + `FOR XML` is the chosen, documented approach.
 
 ## What this exercised in the toolkit
 
@@ -139,8 +152,9 @@ ExecutionVerified           = true   (executed via licensed dtexec + destination
 
 ## Automatic-resolution summary
 
-Of the 5 instruction groups: (1) project, (2) SqlBorrar, (3) full destination load with all
-transforms + impuesto + Access append + ordering, (4) Excel reports — **built, executed and verified
-automatically**. (5) XML export — artifacts produced out-of-band and the SSIS/tooling gap reported.
-**≈ 90–95%** solved automatically end-to-end; the remainder is the XML-mechanism gap (#5) plus two
-rules needing the professor's confirmation (#3 `edad→nacimiento`, and #1 DELETE-vs-DROP).
+All 5 instruction groups — (1) project, (2) SqlBorrar, (3) full destination load with all transforms
++ impuesto + Access append + ordering, (4) Excel reports, (5) XML export — are now **built, executed
+and verified automatically, entirely inside one `IntegracionPractica.dtsx`**. **≈ 100%** solved
+end-to-end. The only open items are two rules the instructions leave unspecified and that need the
+professor's confirmation, not tooling gaps: #3 `edad→nacimiento` (nacimiento left NULL) and #1
+DELETE-vs-DROP for `SqlBorrar`.

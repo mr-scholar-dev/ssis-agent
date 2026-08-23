@@ -29,6 +29,9 @@ namespace SsisMcp.Practica
         static PackageService _svc = new PackageService();
         static string _path = "";
         static string _reportes = "";
+        static string _outDir = "";
+        static string _clienteXml = "";
+        static string _mascotaXml = "";
         const string Q1 = "SELECT c.nombreCompleto, c.telefono, m.nombre AS mascota, e.nombre AS enfermedad " +
             "FROM Cliente c JOIN Mascota m ON m.idCliente=c.id JOIN EnfermedadMascota em ON em.idMascota=m.id " +
             "JOIN Enfermedad e ON e.id=em.idEnfermedad";
@@ -43,10 +46,16 @@ namespace SsisMcp.Practica
             Directory.CreateDirectory(outDir);
             _path = Path.Combine(outDir, "IntegracionPractica.dtsx");
             _reportes = Path.Combine(outDir, "reportes.xlsx");
+            _outDir = outDir;
+            _clienteXml = Path.Combine(outDir, "ClienteXML.xml");
+            _mascotaXml = Path.Combine(outDir, "MascotaXML.xml");
+            foreach (var f in new[] { _clienteXml, _mascotaXml }) if (File.Exists(f)) File.Delete(f); // prove the package writes them
             CreateReportesWorkbook();
 
             // ---- Package + connection managers (ADO.NET for SQL Server per profesor; ACE for Excel/Access) ----
             var pkg = new Dts.Package { Name = "IntegracionPractica" };
+            pkg.Variables.Add("VetConn", false, "User", "Data Source=.;Initial Catalog=Vet;Integrated Security=SSPI;TrustServerCertificate=True;");
+            pkg.Variables.Add("OutDir", false, "User", outDir);
             ConnectionFactory.AddAdoNetSql(pkg, "Origen", ".", "PracticaOrigen");
             ConnectionFactory.AddAdoNetSql(pkg, "Vet", ".", "Vet");
             ConnectionFactory.AddSqlOleDb(pkg, "VetOleDb", ".", "Vet");   // for OLE DB keep-identity into Mascota
@@ -67,9 +76,11 @@ namespace SsisMcp.Practica
                                           "DFTEnfermedadAccess", "DFTMascotaAccess", "DFTEnfermedadMascota",
                                           "DFTReporte1", "DFTReporte2" })
                     b.AddTask(TaskKinds.DataFlow, d);
+                b.AddTask(TaskKinds.Script, "ScriptClienteXML");
+                b.AddTask(TaskKinds.Script, "ScriptMascotaXML");
                 string[] chain = { "SqlBorrar", "DFTTipoCliente", "DFTCliente", "DFTMascota", "DFTEnfermedad",
                                    "DFTEnfermedadAccess", "DFTMascotaAccess", "DFTEnfermedadMascota",
-                                   "DFTReporte1", "DFTReporte2" };
+                                   "DFTReporte1", "DFTReporte2", "ScriptClienteXML", "ScriptMascotaXML" };
                 for (int i = 0; i < chain.Length - 1; i++) b.Connect(chain[i], chain[i + 1]);
             });
             Req("control-flow", cf);
@@ -83,6 +94,10 @@ namespace SsisMcp.Practica
             BuildEnfermedadMascota();
             BuildReporte1();
             BuildReporte2();
+            BuildScriptXml("ScriptClienteXML", "Cliente",
+                "SELECT * FROM Cliente FOR XML RAW('Cliente'), ROOT('ClienteXML'), ELEMENTS", "ClienteXML.xml");
+            BuildScriptXml("ScriptMascotaXML", "Mascota",
+                "SELECT * FROM Mascota FOR XML RAW('Mascota'), ROOT('MascotaXML'), ELEMENTS", "MascotaXML.xml");
 
             // ---- Layout (unified control flow + data flow) ----
             var info = _svc.InspectFile(_path);
@@ -248,6 +263,34 @@ namespace SsisMcp.Practica
             new MappingEngine(b).AutoMap("Dst");
         });
 
+        // XML export INSIDE the package: a precompiled Script Task runs FOR XML against Vet (via the
+        // ReadOnly package variables) and writes the file. No external process. Reusable capability.
+        static void BuildScriptXml(string taskName, string label, string forXmlSql, string fileName)
+        {
+            var body =
+                "            string conn = Dts.Variables[\"User::VetConn\"].Value.ToString();\n" +
+                "            string dir = Dts.Variables[\"User::OutDir\"].Value.ToString();\n" +
+                "            string sql = @\"" + forXmlSql.Replace("\"", "\"\"") + "\";\n" +
+                "            string xml = null;\n" +
+                "            using (var c = new System.Data.SqlClient.SqlConnection(conn))\n" +
+                "            {\n" +
+                "                c.Open();\n" +
+                "                using (var cmd = new System.Data.SqlClient.SqlCommand(sql, c))\n" +
+                "                using (var rdr = cmd.ExecuteReader())\n" +
+                "                {\n" +
+                "                    var sb = new System.Text.StringBuilder();\n" +
+                "                    while (rdr.Read()) sb.Append(rdr.GetValue(0).ToString());\n" +
+                "                    xml = sb.ToString();\n" +
+                "                }\n" +
+                "            }\n" +
+                "            System.IO.File.WriteAllText(System.IO.Path.Combine(dir, \"" + fileName + "\"), xml, new System.Text.UTF8Encoding(false));\n";
+            var source = ScriptTaskSource.CSharpMain(body);
+            var r = new PackageEditor(_svc).Apply(_path, b =>
+                b.ConfigureScriptTask(taskName, source, readOnlyVariables: new[] { "User::VetConn", "User::OutDir" }),
+                tool: "controlflow.scripttask");
+            Req(taskName, r);
+        }
+
         // Creates reportes.xlsx with the two report sheets (header row) via ACE, so the SSIS Excel
         // destination has a target schema to open. Report ROWS are written by the package at runtime.
         static void CreateReportesWorkbook()
@@ -353,6 +396,26 @@ namespace SsisMcp.Practica
 
             Console.WriteLine("-- reportes.xlsx Reporte1 rows = " + ExcelCount("Reporte1$") + " (expected 15)");
             Console.WriteLine("-- reportes.xlsx Reporte2 rows = " + ExcelCount("Reporte2$") + " (expected 5)");
+
+            VerifyXml(_clienteXml, "Cliente", 5);
+            VerifyXml(_mascotaXml, "Mascota", 10);
+        }
+
+        static void VerifyXml(string file, string element, int expected)
+        {
+            var exists = File.Exists(file);
+            string status = "MISSING";
+            if (exists)
+            {
+                try
+                {
+                    var doc = new System.Xml.XmlDocument(); doc.Load(file);
+                    var n = doc.GetElementsByTagName(element).Count;
+                    status = $"valid XML, <{element}> count={n} (expected {expected})" + (n == expected ? " OK" : " MISMATCH");
+                }
+                catch (Exception ex) { status = "INVALID XML: " + ex.Message; }
+            }
+            Console.WriteLine($"-- {Path.GetFileName(file)}: exists={exists}; {status}");
         }
 
         static long ExcelCount(string sheet)
