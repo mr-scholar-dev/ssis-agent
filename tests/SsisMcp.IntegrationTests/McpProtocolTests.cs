@@ -150,6 +150,37 @@ namespace SsisMcp.IntegrationTests
         }
 
         [Fact]
+        public void Undo_and_connection_test_tools_work_via_mcp()
+        {
+            var path = Path.Combine(_dir, "undo.dtsx");
+            Ok("package.create", new JObject { ["packagePath"] = path, ["name"] = "UndoDemo" });
+            Ok("controlflow.apply", new JObject
+            {
+                ["packagePath"] = path,
+                ["operations"] = new JArray
+                {
+                    new JObject { ["op"]="addConnection", ["kind"]="oledb-sql", ["name"]="Db", ["dataSource"]=".", ["catalog"]="tempdb" },
+                    new JObject { ["op"]="addTask", ["kind"]="DataFlow", ["name"]="DFT" },
+                }
+            });
+            Assert.Contains("DFT", Call("package.inspect", new JObject { ["packagePath"] = path }).raw);
+
+            // connection.test: acquires the CM (needs a reachable SQL Server); portable-skip otherwise
+            if (SqlUp())
+            {
+                var ct = Call("connection.test", new JObject { ["packagePath"] = path, ["connection"] = "Db" });
+                Assert.False(ct.isError, ct.raw);
+                Assert.True((bool)ct.result["ok"]!, "connection.test: " + ct.raw);
+            }
+
+            // undo: restore the pre-apply backup → DFT/connection gone
+            var undo = Call("package.undo", new JObject { ["packagePath"] = path });
+            Assert.False(undo.isError, undo.raw);
+            Assert.True((bool)undo.result["succeeded"]!, undo.raw);
+            Assert.DoesNotContain("DFT", Call("package.inspect", new JObject { ["packagePath"] = path }).raw);
+        }
+
+        [Fact]
         public void Script_task_tool_is_wired_and_degrades_structurally()
         {
             var path = Path.Combine(_dir, "scr.dtsx");

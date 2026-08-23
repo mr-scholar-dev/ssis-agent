@@ -263,6 +263,16 @@ namespace SsisMcp.Server
                     PathSchema("packagePath","Absolute path to the .dtsx."),
                     a => new SsdtDebugExecutionHost().Execute(ReqPath(a,"packagePath"))),
 
+                new ToolDef("package.undo",
+                    "Undo the last committed change by restoring the most recent Safety backup, then re-inspect.",
+                    PathSchema("packagePath","Absolute path to the .dtsx."),
+                    a => new PackageEditor(_packages).Undo(ReqPath(a,"packagePath"))),
+
+                new ToolDef("connection.test",
+                    "Test that a named connection manager can connect (AcquireConnection) without running the package.",
+                    Schema(("packagePath","Absolute path to the .dtsx.",true), ("connection","Connection manager name.",true)),
+                    a => new ConnectionTester(_packages).Test(ReqPath(a,"packagePath"), ReqPath(a,"connection"))),
+
                 new ToolDef("data.verify",
                     "Run a scalar SQL query against a SQL Server connection string and (optionally) compare to an expected value. " +
                     "For business verification of destination data after execution.",

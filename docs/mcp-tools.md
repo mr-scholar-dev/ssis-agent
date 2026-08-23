@@ -31,6 +31,8 @@ results are structured DTOs serialized as JSON (never free text).
 | `layout.apply` | `packagePath, mode?` (`AddMissing`/`Relayout`) | `{ applied, mode, nodes[] }` |
 | `package.validate` | `packagePath` | `{ result, valid }` |
 | `package.execute` | `packagePath` | `ExecutionResult` (`Success`/`Failure`/`EnvironmentBlocked`) |
+| `package.undo` | `packagePath` | `OperationResult` — restores the latest Safety backup |
+| `connection.test` | `packagePath, connection` | `{ name, ok, error? }` — acquires the CM, no run |
 | `data.verify` | `connectionString, sql, expected?` | `{ value, expected, matched }` |
 
 All mutations run **strictly through the Safety layer** (`preview → apply → validate → commit |
@@ -86,9 +88,8 @@ connections come directly from the Pipeline API's `RuntimeConnectionCollection`.
 ## Not yet exposed (candidates for later phases)
 
 ```
-package.undo / package.backup      (Safety keeps backups; no undo tool surfaced yet)
+package.backup                     (Safety keeps backups automatically; no explicit backup tool)
 metadata.repair                    (lineage auto-repair runs inside apply; not a standalone tool)
-connection.test                    (validate a CM connects, without executing the package)
 mapping.inspect / mapping.repair   (mapping compare/repair beyond map/autoMap)
 sql.compare / excel.inspect / access.inspect / requirements.analyze
 ```

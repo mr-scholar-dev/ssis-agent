@@ -165,6 +165,32 @@ namespace SsisMcp.Ssis.Building
             catch (Exception ex) { return OperationResult.Fail(BuilderErrorCode.MutationError, ex.GetType().Name + ": " + ex.Message); }
         }
 
+        /// <summary>
+        /// Undo: restores the most recent Safety backup over the package (the backup the last committed
+        /// Apply/ApplyDataFlow created), then re-inspects. Returns a failed result when there is nothing
+        /// to undo. Backups themselves are never deleted.
+        /// </summary>
+        public OperationResult Undo(string packagePath)
+        {
+            try
+            {
+                var restored = new BackupManager().RestoreLatest(packagePath);
+                if (!restored)
+                    return OperationResult.Fail(BuilderErrorCode.MutationError, "nothing to undo (no backup found)");
+                return new OperationResult
+                {
+                    Succeeded = true,
+                    SafetyState = "Undone",
+                    Detail = "restored latest backup",
+                    Package = _svc.InspectFile(packagePath)
+                };
+            }
+            catch (Exception ex)
+            {
+                return OperationResult.Fail(BuilderErrorCode.MutationError, ex.GetType().Name + ": " + ex.Message);
+            }
+        }
+
         private static Wrapper.MainPipe? FindPipeline(Dts.Package pkg, string dftName)
         {
             foreach (var exec in Flatten(pkg.Executables))
