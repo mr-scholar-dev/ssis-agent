@@ -53,6 +53,34 @@ actually be opened in the Designer and verified — otherwise it would be theore
 **Both Visual Studio 2022 and Visual Studio 2026 are first-class, officially supported from the
 initial design.** VS 2022 is *not* treated as future/best-effort compatibility.
 
+## Target roles (Designer verification vs bridge)
+
+| Generation | MCP bridge | SSIS Designer verification |
+|---|---|---|
+| **VS 2022** | ✅ target | ✅ **Designer verification target** (once SSIS Projects extension installed) |
+| **VS 2026** | ✅ target | ⛔ **EnvironmentBlocked** — Microsoft's SSIS Projects extension does not support VS 2026 yet; we will not fake visual compatibility |
+
+The probe reports **four distinct facts per instance** (never one boolean):
+`VisualStudioInstalled`, `VisualStudioIdeAvailable`, `SsisProjectsExtensionInstalled`,
+`SsisDesignerAvailable`, plus a per-instance `DesignerLayoutTesting` = `Ready | EnvironmentBlocked`
+and an overall `designer.layout.testing` check.
+
+### To enable Designer verification (resume the gate)
+
+Install **Visual Studio 2022 Community (full IDE, not Build Tools)** + the **SQL Server Integration
+Services Projects** extension, then re-run `dotnet run --project src/SsisMcp.EnvProbe`. Expected:
+
+```
+vs.2022                 : PASS  (... IdeAvailable=True; SsisProjectsExtensionInstalled=True; SsisDesignerAvailable=True; DesignerLayoutTesting=Ready)
+designer.layout.testing : PASS  (READY ...)
+```
+
+When `DesignerLayoutTesting=Ready`, resume exactly at this gate: (1) create golden packages from the
+Designer, (2) capture the real `DesignTimeProperties`/`GraphLayout`, (3) diff vs MCP output,
+(4) implement `DesignerLayoutEngine` from observed metadata only, (5) open MCP packages in VS 2022 &
+verify visually, (6) turn everything possible into regressions. Do **not** implement blind layout
+before this.
+
 > Status: **design contracts locked** (`SsisMcp.Core/Ide/VisualStudioContracts.cs`).
 > Concrete detection + adapters + fixtures are scheduled after the Data Flow builder, per the
 > agreed implementation order (Safety → read-only inspection → Control Flow → Data Flow → VS adapters).

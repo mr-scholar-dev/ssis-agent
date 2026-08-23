@@ -35,6 +35,35 @@ namespace SsisMcp.EnvProbe
             }
             report.Checks.Add(execCheck);
 
+            // Visual Studio / SSIS Designer breakdown (four distinct facts, never one boolean).
+            try
+            {
+                var instances = new SsisMcp.VisualStudioBridge.WindowsVisualStudioLocator().DetectAll();
+                var anyReady = false;
+                foreach (var vs in instances)
+                {
+                    var name = "vs." + (vs.Generation == SsisMcp.Core.Ide.TargetIde.VS2022 ? "2022"
+                        : vs.Generation == SsisMcp.Core.Ide.TargetIde.VS2026 ? "2026" : vs.Version);
+                    var status = vs.SsisDesignerAvailable ? CheckStatus.Pass : CheckStatus.Warn;
+                    var c = new CheckResult(name, status,
+                        $"role={vs.Role}; VisualStudioInstalled={vs.VisualStudioInstalled}; IdeAvailable={vs.VisualStudioIdeAvailable}; " +
+                        $"SsisProjectsExtensionInstalled={vs.SsisProjectsExtensionInstalled}; SsisDesignerAvailable={vs.SsisDesignerAvailable}; " +
+                        $"DesignerLayoutTesting={vs.DesignerLayoutTesting}");
+                    c.Data["version"] = vs.Version;
+                    c.Data["edition"] = vs.Edition ?? "";
+                    report.Checks.Add(c);
+                    if (vs.DesignerLayoutTesting == "Ready") anyReady = true;
+                }
+                report.Checks.Add(new CheckResult("designer.layout.testing",
+                    anyReady ? CheckStatus.Pass : CheckStatus.Warn,
+                    anyReady ? "READY (a VS 2022 instance has the SSIS Designer)"
+                             : "EnvironmentBlocked (no VS 2022 instance with the SSIS Projects extension)"));
+            }
+            catch (Exception ex)
+            {
+                report.Checks.Add(new CheckResult("visualstudio.detect", CheckStatus.Unknown, "probe error: " + ex.Message));
+            }
+
             Console.WriteLine(report.ToDisplayString());
 
             if (!report.CoreUsable)

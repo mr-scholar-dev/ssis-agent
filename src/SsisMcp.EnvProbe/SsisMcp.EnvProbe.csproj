@@ -9,5 +9,6 @@
   <ItemGroup>
     <ProjectReference Include="..\SsisMcp.Core\SsisMcp.Core.csproj" />
     <ProjectReference Include="..\SsisMcp.Ssis\SsisMcp.Ssis.csproj" />
+    <ProjectReference Include="..\SsisMcp.VisualStudioBridge\SsisMcp.VisualStudioBridge.csproj" />
   </ItemGroup>
 </Project>

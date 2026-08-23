@@ -28,17 +28,38 @@ namespace SsisMcp.Core.Ide
 
         public string InstallationPath { get; set; } = "";
 
-        /// <summary>Whether the SQL Server Integration Services Projects extension is installed.</summary>
+        // --- four DISTINCT facts (never collapsed into one boolean) ---
+
+        /// <summary>vswhere reported this instance (it is installed).</summary>
+        public bool VisualStudioInstalled { get; set; }
+
+        /// <summary>A full IDE is present (devenv.exe) — Build Tools is installed-but-not-an-IDE.</summary>
+        public bool VisualStudioIdeAvailable { get; set; }
+
+        /// <summary>The SQL Server Integration Services Projects extension is installed.</summary>
         public bool SsisProjectsExtensionInstalled { get; set; }
+
+        /// <summary>The SSIS Designer is actually usable (IDE + extension present).</summary>
+        public bool SsisDesignerAvailable { get; set; }
 
         /// <summary>Version of the SSIS Projects extension, when detectable.</summary>
         public string? SsisProjectsExtensionVersion { get; set; }
 
-        /// <summary>Can this instance open .dtproj projects (i.e. extension present & compatible)?</summary>
+        /// <summary>Can this instance open .dtproj projects (equivalent to SsisDesignerAvailable).</summary>
         public bool CanOpenDtproj { get; set; }
 
         /// <summary>Is a VSIX/bridge compatible with this instance available?</summary>
         public bool BridgeCompatible { get; set; }
+
+        /// <summary>
+        /// Role of this generation: VS2022 is the Designer verification target; VS2026 is a
+        /// bridge/architectural target whose Designer stays EnvironmentBlocked until Microsoft ships
+        /// the SSIS Projects extension for it.
+        /// </summary>
+        public string Role { get; set; } = "";
+
+        /// <summary>"Ready" when this instance can host Designer-layout verification; else "EnvironmentBlocked".</summary>
+        public string DesignerLayoutTesting { get; set; } = "EnvironmentBlocked";
 
         /// <summary>Free-form capability flags for forward compatibility.</summary>
         public List<string> Capabilities { get; } = new List<string>();

@@ -23,22 +23,31 @@ namespace SsisMcp.VisualStudioBridge
             var major = MajorOf(rec.DisplayVersion);
             var generation = major == 17 ? TargetIde.VS2022 : major == 18 ? TargetIde.VS2026 : TargetIde.Auto;
 
+            var designerAvailable = hasIde && hasSsisDesigner;
+            // VS2022 is the Designer verification target; VS2026's Designer is blocked until the
+            // official SSIS Projects extension supports it (architectural/bridge target for now).
+            var isVerificationTarget = generation == TargetIde.VS2022;
+
             var info = new VisualStudioInstanceInfo
             {
                 Version = rec.DisplayVersion,
                 Generation = generation,
                 Edition = EditionOf(rec.ProductId),
                 InstallationPath = rec.InstallationPath,
+                VisualStudioInstalled = true,
+                VisualStudioIdeAvailable = hasIde,
                 SsisProjectsExtensionInstalled = hasSsisDesigner,
+                SsisDesignerAvailable = designerAvailable,
                 SsisProjectsExtensionVersion = hasSsisDesigner ? extensionVersion : null,
-                // Opening a .dtproj in the designer requires BOTH a full IDE and the SSIS designer.
-                CanOpenDtproj = hasIde && hasSsisDesigner,
-                BridgeCompatible = hasIde && hasSsisDesigner
+                CanOpenDtproj = designerAvailable,
+                BridgeCompatible = hasIde, // the MCP bridge targets any full IDE (both generations)
+                Role = isVerificationTarget ? "DesignerVerificationTarget" : "BridgeTarget",
+                DesignerLayoutTesting = (isVerificationTarget && designerAvailable) ? "Ready" : "EnvironmentBlocked"
             };
 
             info.Capabilities.Add(hasIde ? "ide" : "no-ide");
-            if (hasSsisDesigner) info.Capabilities.Add("ssis-designer");
-            else info.Capabilities.Add("DesignerUnavailable");
+            info.Capabilities.Add(hasSsisDesigner ? "ssis-designer" : "DesignerUnavailable");
+            if (info.DesignerLayoutTesting == "Ready") info.Capabilities.Add("designer-layout-testing-ready");
             return info;
         }
 

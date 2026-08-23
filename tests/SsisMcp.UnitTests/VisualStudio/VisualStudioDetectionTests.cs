@@ -39,17 +39,44 @@ namespace SsisMcp.UnitTests.VisualStudio
         {
             var info = VsInstanceClassifier.Classify(Vs2026(), hasIde: true, hasSsisDesigner: false);
             Assert.False(info.CanOpenDtproj);
-            Assert.False(info.BridgeCompatible);
+            Assert.False(info.SsisDesignerAvailable);
+            Assert.True(info.BridgeCompatible); // the MCP bridge still targets the IDE
             Assert.Contains("DesignerUnavailable", info.Capabilities);
         }
 
         [Fact]
-        public void Ide_with_ssis_extension_can_open_dtproj()
+        public void Vs2022_with_ssis_extension_is_designer_layout_testing_ready()
         {
             var info = VsInstanceClassifier.Classify(Vs2022(), hasIde: true, hasSsisDesigner: true, extensionVersion: "1.5");
             Assert.True(info.CanOpenDtproj);
-            Assert.True(info.BridgeCompatible);
+            Assert.True(info.VisualStudioInstalled);
+            Assert.True(info.VisualStudioIdeAvailable);
+            Assert.True(info.SsisProjectsExtensionInstalled);
+            Assert.True(info.SsisDesignerAvailable);
             Assert.Equal("1.5", info.SsisProjectsExtensionVersion);
+            Assert.Equal("DesignerVerificationTarget", info.Role);
+            Assert.Equal("Ready", info.DesignerLayoutTesting); // <-- flips to READY once VS2022+SSDT is installed
+        }
+
+        [Fact]
+        public void Vs2026_designer_stays_blocked_even_if_extension_present()
+        {
+            // Policy: VS2026 is a bridge/architectural target; its Designer is EnvironmentBlocked
+            // until Microsoft ships the SSIS Projects extension for it — never faked.
+            var info = VsInstanceClassifier.Classify(Vs2026(), hasIde: true, hasSsisDesigner: true);
+            Assert.Equal("BridgeTarget", info.Role);
+            Assert.Equal("EnvironmentBlocked", info.DesignerLayoutTesting);
+            Assert.True(info.BridgeCompatible); // the MCP bridge still targets VS2026
+        }
+
+        [Fact]
+        public void BuildTools_reports_all_four_facts_distinctly()
+        {
+            var info = VsInstanceClassifier.Classify(Vs2022("BuildTools"), hasIde: false, hasSsisDesigner: false);
+            Assert.True(info.VisualStudioInstalled);
+            Assert.False(info.VisualStudioIdeAvailable);
+            Assert.False(info.SsisProjectsExtensionInstalled);
+            Assert.False(info.SsisDesignerAvailable);
         }
 
         [Fact]
