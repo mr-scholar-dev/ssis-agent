@@ -53,6 +53,29 @@ actually be opened in the Designer and verified — otherwise it would be theore
 **Both Visual Studio 2022 and Visual Studio 2026 are first-class, officially supported from the
 initial design.** VS 2022 is *not* treated as future/best-effort compatibility.
 
+## ✅ Control Flow DesignerLayout VERIFIED (VS 2022, 2026-08-23)
+
+An MCP-generated package (`samples/VisualBenchmark_ControlFlow.dtsx`, laid out by
+`SsisMcp.Designer.ControlFlowLayoutEngine`) was opened in the VS 2022 SSIS Designer and **visually
+confirmed**: SqlBorrar → DFTTipoCliente → DFTCliente → DFTMascota → DFTEnfermedad rendered
+**top→bottom with the MCP-computed positions**, the four Success precedence arrows drawn between the
+boxes, no overlap, correct names, and the `Vet` connection manager present. So for Control Flow:
+
+```
+FunctionalStructureVerified = true
+DesignerLayoutVerified      = true   (VS 2022 only; VS 2026 EnvironmentBlocked by policy)
+ExecutionVerified           = pending (see note)
+```
+
+> **Execution note:** the same package additionally **executed green inside VS** (`DtsDebugHost` exit
+> code 0). Execution is license-gated only for the *standalone* runtime — **inside the SSDT/VS context
+> it runs**. This reframes the execution gate: a viable path to `ExecutionVerified` is executing
+> through the SSDT/DtsDebugHost context rather than requiring a Standard+ standalone license.
+> (Data Flow with transforms still to be confirmed this way.)
+
+Data Flow designer layout (left→right, Match/No-Match branches) and its visual confirmation are the
+remaining part of this gate (`DataFlowLayoutEngine` not yet implemented).
+
 ## Target roles (Designer verification vs bridge)
 
 | Generation | MCP bridge | SSIS Designer verification |
