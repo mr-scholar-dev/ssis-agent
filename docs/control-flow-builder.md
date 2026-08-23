@@ -35,7 +35,7 @@ Values: `Success`, `Failure`, `Completion`. Evaluation ops: `Constraint`, `Expre
 | Sequence Container | ✅ | ✅ | verified nesting of a configured child |
 | For Loop | ✅ | ⚠️ needs config | creation verified; empty loop fails validation (needs EvalExpression) — expected |
 | Foreach Loop | ✅ | ✅ empty | **partial**: enumerator NOT yet exercised — do not treat as full support |
-| Script Task | ⚠️ | ❌ | **partial/unsupported on this host**: `Add("Microsoft.ScriptTask")` fails with `0x80070057` — requires VSTA/script design-time components not installed |
+| Script Task | ✅ | ✅ | **verified once VSTA present**: after installing the Integration Services shared feature, `Add("Microsoft.ScriptTask")` creates + commits. Where VSTA is absent it is reported `Unsupported` (`0x80070057`) — portable, not faked. |
 
 ### Verified capabilities
 - Create + configure + connect + rename + remove + round-trip inspect for **Execute SQL Task**,

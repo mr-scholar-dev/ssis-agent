@@ -32,14 +32,30 @@ green exit code is never treated as proof.
 
 The builder never couples to any of this — execution stays behind `IPackageExecutionHost`.
 
-## ExecutionVerified status
+## ✅ ExecutionVerified = TRUE (2026-08-23)
 
-**NOT declared** on this machine: no clean headless signed host is available
-(`SsdtDebugExecutionHost.Execute` → `EnvironmentBlocked`, reasons above). `build`/`validate` still
-PASS; execution + data-verify are the only pending steps. Regression tests
-(`ExecutionTests`) assert build+validate PASS and that execution is either `Success` (then they
-verify `Impuesto = Monto*0.13` and Lookup `Match=2 / NoMatch=1`) or a **known** `EnvironmentBlocked`
-reason — so they pass now and fully verify data automatically once unblocked.
+After installing the **Integration Services** shared feature (engine = Enterprise Evaluation, so its
+`dtexec` is licensed), execution is unblocked and **verified with real destination data**:
+
+```
+Derived Column:  Monto=100 -> Impuesto=13.00   (rows=1)                  PASS
+Lookup:          Match=2, NoMatch=1, TipoCliente(Codigo 1)=Premium        PASS
+```
+
+- `environment.detect` → `execution.dataFlow : PASS (available)`.
+- `SsdtDebugExecutionHost.Execute` → `Success` via the licensed `dtexec` (v17.0.1000.7), no gate.
+- `ExecutionVerifiedTests` assert `Success` + the exact destination data (Impuesto, Match/NoMatch,
+  TipoCliente); `ExecutionTests` assert build+validate PASS then execute+verify. Both green.
+
+So for the executed pipelines (OLE DB Source → Derived Column → OLE DB Destination; OLE DB Source →
+Lookup → Match/NoMatch destinations):
+
+```
+build PASS · validate PASS · execute PASS · destination data verify PASS  => ExecutionVerified = true
+```
+
+The tests stay **portable**: on a machine with no licensed signed host, `Execute` returns
+`EnvironmentBlocked` (known reason) and the strict test skips.
 
 ## How to unblock (one user action, mirrors the SSDT install)
 

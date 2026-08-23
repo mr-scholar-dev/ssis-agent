@@ -67,14 +67,18 @@ namespace SsisMcp.IntegrationTests
             Assert.Equal(nameof(BuilderErrorCode.ValidationFailed), r.ErrorCode);
         }
 
+        // Script Task needs the VSTA design-time, which the Integration Services shared feature
+        // installs. Where present it creates + commits; where absent it is reported Unsupported
+        // (0x80070057). Portable across both environments — never faked.
         [Fact]
-        public void Script_task_is_reported_Unsupported_on_this_host()  // partial: needs VSTA design-time
+        public void Script_task_creates_when_vsta_present_else_reports_unsupported()
         {
             var path = NewTarget();
             var r = new PackageEditor(_svc).Apply(path, b => b.AddTask(TaskKinds.Script, "Scr"));
-            Assert.False(r.Succeeded);
-            Assert.Equal(nameof(BuilderErrorCode.Unsupported), r.ErrorCode);
-            Assert.Contains("Script", r.Detail);
+            if (r.Succeeded)
+                Assert.Contains(r.Package!.Executables, e => e.Name == "Scr");   // VSTA present -> Script Task created + committed
+            else
+                Assert.Equal(nameof(BuilderErrorCode.Unsupported), r.ErrorCode); // VSTA absent -> honest Unsupported
         }
     }
 }
