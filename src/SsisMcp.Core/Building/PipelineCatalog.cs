@@ -11,6 +11,8 @@ namespace SsisMcp.Core.Building
         public const string ExcelDestination = "ExcelDestination";
         public const string FlatFileSource = "FlatFileSource";
         public const string FlatFileDestination = "FlatFileDestination";
+        public const string AdoNetSource = "AdoNetSource";
+        public const string AdoNetDestination = "AdoNetDestination";
         public const string DataConversion = "DataConversion";
         public const string DerivedColumn = "DerivedColumn";
         public const string ConditionalSplit = "ConditionalSplit";

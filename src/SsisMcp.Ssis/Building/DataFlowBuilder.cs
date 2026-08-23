@@ -163,6 +163,53 @@ namespace SsisMcp.Ssis.Building
             ReinitUnderConnection(inst);
         }
 
+        /// <summary>
+        /// ADO NET Source (managed adapter). accessMode 0 = table/view, otherwise SQL command.
+        /// Metadata acquisition needs Microsoft.Data.SqlClient's binding closure (SSDT host context);
+        /// on a standalone net48 host that is not resolvable → structured UnsupportedEnvironment.
+        /// </summary>
+        public void ConfigureAdoNetSource(string name, string connectionManager, int accessMode, string sqlOrTable)
+        {
+            var comp = Require(name);
+            var inst = comp.Instantiate();
+            WireConnection(comp, connectionManager);
+            if (accessMode == 0) { inst.SetComponentProperty("AccessMode", 0); inst.SetComponentProperty("TableOrViewName", sqlOrTable); }
+            else { inst.SetComponentProperty("SqlCommand", sqlOrTable); }
+            ReinitAdoNet(inst, name);
+        }
+
+        /// <summary>ADO NET Destination (managed adapter). Writes to a table/view.</summary>
+        public void ConfigureAdoNetDestination(string name, string connectionManager, string table)
+        {
+            var comp = Require(name);
+            var inst = comp.Instantiate();
+            WireConnection(comp, connectionManager);
+            inst.SetComponentProperty("TableOrViewName", table);
+            ReinitAdoNet(inst, name);
+        }
+
+        private static void ReinitAdoNet(Wrapper.IDTSDesigntimeComponent100 inst, string name)
+        {
+            SsisAssemblyResolver.Install();
+            try
+            {
+                inst.AcquireConnections(null);
+                inst.ReinitializeMetaData();
+                inst.ReleaseConnections();
+            }
+            catch (System.IO.FileNotFoundException ex) when (ex.Message.IndexOf("Microsoft.Data.SqlClient", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                throw new BuilderException(BuilderErrorCode.UnsupportedEnvironment,
+                    $"ADO NET '{name}' metadata acquisition requires the SSDT host assembly context " +
+                    "(Microsoft.Data.SqlClient binding closure) which is not resolvable on a standalone net48 host: " + ex.Message);
+            }
+            catch (System.Exception ex) when (ex.GetType().Name == "COMException" || ex is InvalidOperationException)
+            {
+                throw new BuilderException(BuilderErrorCode.MissingSource,
+                    $"ADO NET '{name}' could not acquire metadata (provider/connection/table): {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
         /// <summary>Excel Source: reads a worksheet (OpenRowset = "Sheet1$") via an ACE-backed Excel CM.</summary>
         public void ConfigureExcelSource(string name, string connectionManager, string sheet)
         {

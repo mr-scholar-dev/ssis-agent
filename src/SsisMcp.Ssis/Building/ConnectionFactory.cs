@@ -63,6 +63,19 @@ namespace SsisMcp.Ssis.Building
             return cm;
         }
 
+        /// <summary>SSIS moniker for the ADO.NET (System.Data.SqlClient) connection manager. Centralized.</summary>
+        public const string AdoNetSqlConnectionMoniker =
+            "ADO.NET:System.Data.SqlClient.SqlConnection, System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089";
+
+        /// <summary>ADO.NET (SqlClient) connection manager for a SQL Server database.</summary>
+        public static Dts.ConnectionManager AddAdoNetSql(Dts.Package pkg, string name, string dataSource, string catalog)
+        {
+            var cm = pkg.Connections.Add(AdoNetSqlConnectionMoniker);
+            cm.Name = name;
+            cm.ConnectionString = $"Data Source={dataSource};Initial Catalog={catalog};Integrated Security=True;";
+            return cm;
+        }
+
         /// <summary>SQL Server OLE DB connection manager (MSOLEDBSQL).</summary>
         public static Dts.ConnectionManager AddSqlOleDb(Dts.Package pkg, string name, string dataSource, string catalog)
         {

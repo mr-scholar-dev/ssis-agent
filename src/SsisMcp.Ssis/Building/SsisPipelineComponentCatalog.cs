@@ -13,6 +13,10 @@ namespace SsisMcp.Ssis.Building
         private static readonly Dictionary<string, string> Map =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
+                // ADO NET adapters are MANAGED components: the class id must be the assembly-qualified
+                // type name (not a short moniker). Centralized here per requirement.
+                [ComponentKinds.AdoNetSource]       = "Microsoft.SqlServer.Dts.Pipeline.DataReaderSourceAdapter, Microsoft.SqlServer.ADONETSrc, Version=17.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91",
+                [ComponentKinds.AdoNetDestination]  = "Microsoft.SqlServer.Dts.Pipeline.ADONETDestination, Microsoft.SqlServer.ADONETDest, Version=17.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91",
                 [ComponentKinds.OleDbSource]        = "Microsoft.OLEDBSource",
                 [ComponentKinds.OleDbDestination]   = "Microsoft.OLEDBDestination",
                 [ComponentKinds.ExcelSource]        = "Microsoft.ExcelSource",

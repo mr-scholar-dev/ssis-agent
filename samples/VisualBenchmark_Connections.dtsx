@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="8/23/2026 12:05:51 AM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="DESKTOP-VP44JKB"
+  DTS:CreatorName="DESKTOP-VP44JKB\serra"
+  DTS:DTSID="{FF37724F-4082-4BBF-87BF-5E3839A0C4B6}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="17.0.1000.7"
+  DTS:LocaleID="1033"
+  DTS:ObjectName="ConnectionManagers"
+  DTS:VersionGUID="{377779C4-0059-4CA3-87A3-370DE7C92B4B}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:ConnectionManagers>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[CargaAccess]"
+      DTS:CreationName="OLEDB"
+      DTS:DTSID="{9EF8B754-6EAA-4777-B9B1-178C414AC498}"
+      DTS:ObjectName="CargaAccess">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectRetryCount="1"
+          DTS:ConnectRetryInterval="5"
+          DTS:ConnectionString="Data Source=C:\Data\Carga de tablas emergentes.accdb;Provider=Microsoft.ACE.OLEDB.12.0;Persist Security Info=False;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[CargaExcel]"
+      DTS:CreationName="EXCEL"
+      DTS:DTSID="{36721317-767C-464D-8ED3-A53580ACC649}"
+      DTS:ObjectName="CargaExcel">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectRetryCount="0"
+          DTS:ConnectRetryInterval="0"
+          DTS:ConnectionString="Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Data\Carga de tablas.xls;Extended Properties=&quot;EXCEL 8.0;HDR=YES&quot;;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[CargaPlana]"
+      DTS:CreationName="FLATFILE"
+      DTS:DTSID="{882A52CE-F110-4FCF-BAF3-0655A17B0408}"
+      DTS:ObjectName="CargaPlana">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:Format="Delimited"
+          DTS:LocaleID="1033"
+          DTS:HeaderRowDelimiter="_x000D__x000A_"
+          DTS:ColumnNamesInFirstDataRow="True"
+          DTS:RowDelimiter="_x000D__x000A_"
+          DTS:TextQualifier=""
+          DTS:CodePage="1252"
+          DTS:ConnectionString="C:\Data\carga.csv">
+          <DTS:FlatFileColumns>
+            <DTS:FlatFileColumn
+              DTS:ColumnType="Delimited"
+              DTS:ColumnDelimiter="_x002C_"
+              DTS:DataType="3"
+              DTS:ObjectName="Codigo"
+              DTS:DTSID="{26797D47-0701-493B-85BE-A2EC3ABC3C65}"
+              DTS:CreationName="" />
+            <DTS:FlatFileColumn
+              DTS:ColumnType="Delimited"
+              DTS:ColumnDelimiter="_x000D__x000A_"
+              DTS:MaximumWidth="50"
+              DTS:DataType="129"
+              DTS:ObjectName="Nombre"
+              DTS:DTSID="{E0EA4860-FCAA-47D0-872C-6BAB6FBBBF8E}"
+              DTS:CreationName="" />
+          </DTS:FlatFileColumns>
+        </DTS:ConnectionManager>
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[OrigenAdoNet]"
+      DTS:CreationName="ADO.NET:System.Data.SqlClient.SqlConnection, System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+      DTS:DTSID="{BA71521F-8C48-4334-8CAA-8684FC5BD0AD}"
+      DTS:ObjectName="OrigenAdoNet">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectionString="Data Source=.;Initial Catalog=PracticaOrigen;Integrated Security=True;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[PracticaOrigen]"
+      DTS:CreationName="OLEDB"
+      DTS:DTSID="{C16E1BC8-9590-4AC8-A9F9-1518C1BE1E3B}"
+      DTS:ObjectName="PracticaOrigen">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectRetryCount="1"
+          DTS:ConnectRetryInterval="5"
+          DTS:ConnectionString="Data Source=.;Initial Catalog=PracticaOrigen;Provider=MSOLEDBSQL;Integrated Security=SSPI;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[Vet]"
+      DTS:CreationName="OLEDB"
+      DTS:DTSID="{BDAD698B-DFB0-4A44-9631-27BF7125F2A5}"
+      DTS:ObjectName="Vet">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectRetryCount="1"
+          DTS:ConnectRetryInterval="5"
+          DTS:ConnectionString="Data Source=.;Initial Catalog=Vet;Provider=MSOLEDBSQL;Integrated Security=SSPI;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+  </DTS:ConnectionManagers>
+  <DTS:Variables />
+  <DTS:Executables />
+</DTS:Executable>

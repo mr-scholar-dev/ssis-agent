@@ -49,7 +49,28 @@ namespace SsisMcp.SampleGen
             var info = svc.InspectFile(path);
             Console.WriteLine($"Executables: {info.Executables.Count}, PrecedenceConstraints: {info.PrecedenceConstraints.Count}, Connections: {info.Connections.Count}");
             Console.WriteLine("Open this .dtsx in the VS 2022 SSIS Designer to verify the Control Flow visually.");
+
+            GenerateConnectionsSample(svc, outDir);
             return 0;
+        }
+
+        /// <summary>All six connection-manager families the benchmark uses, visible in the VS tray.</summary>
+        private static void GenerateConnectionsSample(PackageService svc, string outDir)
+        {
+            var path = Path.GetFullPath(Path.Combine(outDir, "VisualBenchmark_Connections.dtsx"));
+            var pkg = new Dts.Package { Name = "ConnectionManagers" };
+            ConnectionFactory.AddSqlOleDb(pkg, "PracticaOrigen", ".", "PracticaOrigen");
+            ConnectionFactory.AddSqlOleDb(pkg, "Vet", ".", "Vet");
+            ConnectionFactory.AddAdoNetSql(pkg, "OrigenAdoNet", ".", "PracticaOrigen");
+            ConnectionFactory.AddExcel(pkg, "CargaExcel", @"C:\Data\Carga de tablas.xls", xlsx: false);
+            ConnectionFactory.AddAccess(pkg, "CargaAccess", @"C:\Data\Carga de tablas emergentes.accdb");
+            ConnectionFactory.AddFlatFile(pkg, "CargaPlana", @"C:\Data\carga.csv",
+                new[] { ("Codigo", Microsoft.SqlServer.Dts.Runtime.Wrapper.DataType.DT_I4, 0),
+                        ("Nombre", Microsoft.SqlServer.Dts.Runtime.Wrapper.DataType.DT_STR, 50) });
+            svc.Save(pkg, path);
+            var info = svc.InspectFile(path);
+            Console.WriteLine($"Generated: {path}  (connection managers: {info.Connections.Count})");
+            foreach (var c in info.Connections) Console.WriteLine($"   {c.Name}  [{c.CreationName}]");
         }
     }
 }
