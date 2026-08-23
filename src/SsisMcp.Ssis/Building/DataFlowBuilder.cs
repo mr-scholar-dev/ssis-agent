@@ -133,14 +133,24 @@ namespace SsisMcp.Ssis.Building
             ReinitUnderConnection(inst);
         }
 
-        /// <summary>OLE DB Destination: access mode 0 = table/view fast load is 3; we default to 0 (table).</summary>
-        public void ConfigureOleDbDestination(string name, string connectionManager, string table, int accessMode = 0)
+        /// <summary>OLE DB Destination: access mode 0 = table/view; fast load is 3. Set
+        /// <paramref name="keepIdentity"/> to preserve explicit values into an IDENTITY column — this
+        /// forces fast-load (AccessMode 3) and sets FastLoadKeepIdentity, since ADO.NET/row-by-row
+        /// cannot issue SET IDENTITY_INSERT.</summary>
+        public void ConfigureOleDbDestination(string name, string connectionManager, string table, int accessMode = 0, bool keepIdentity = false)
         {
             var comp = Require(name);
             var inst = comp.Instantiate();
             WireConnection(comp, connectionManager);
+            if (keepIdentity) accessMode = 3; // keep identity is only honored under fast load
             inst.SetComponentProperty("AccessMode", accessMode);
             inst.SetComponentProperty("OpenRowset", table);
+            if (accessMode == 3)
+            {
+                inst.SetComponentProperty("FastLoadKeepIdentity", keepIdentity);
+                inst.SetComponentProperty("FastLoadKeepNulls", false);
+                inst.SetComponentProperty("FastLoadMaxInsertCommitSize", 0);
+            }
             ReinitUnderConnection(inst);
         }
 

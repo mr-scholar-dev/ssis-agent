@@ -154,7 +154,7 @@ namespace SsisMcp.IntegrationTests
         }
 
         [Fact]
-        public void Ambiguous_multiple_conversions_are_not_auto_repaired()
+        public void Multiple_conversions_are_rebound_positionally()
         {
             if (!Sql(out var conn)) return;
             using (conn)
@@ -177,9 +177,13 @@ namespace SsisMcp.IntegrationTests
                 var engine = new MetadataLineageEngine();
 
                 var report = engine.Repair(Pipe(reloaded), RepairMode.SafeRepair, 3);
-                // Two input columns ⇒ cannot disambiguate ⇒ ambiguous, not applied, manual intervention.
-                Assert.Contains(report.Actions, a => a.Confidence == RepairConfidence.Ambiguous && !a.Applied);
-                Assert.True(report.ManualInterventionRequired);
+                // #prop-carrying output columns == #input columns ⇒ output[i] converts input[i] ⇒ exact
+                // positional rebind, applied in SafeRepair. (Was previously reported Ambiguous/unrepaired;
+                // the multi-column DFTs in the Fase 28 practice depend on this being auto-repaired.)
+                Assert.Contains(report.Actions, a => a.Confidence == RepairConfidence.Exact && a.Applied);
+                Assert.DoesNotContain(report.Actions, a => a.Confidence == RepairConfidence.Ambiguous);
+                Assert.True(report.FinalValid);
+                Assert.False(report.ManualInterventionRequired);
             }
         }
 

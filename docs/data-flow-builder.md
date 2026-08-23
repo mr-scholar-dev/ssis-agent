@@ -168,6 +168,24 @@ save/reload, inspector, VS 2022 visual). Standalone execution stays EnvironmentB
    needs a licensed Integration Services edition (or a remote execution host). Tests that execute
    detect the gate and skip data-verify rather than fail.
 
+## Fase 28 update — multi-column Data Conversion + keep-identity + real execution
+
+The end-to-end IntegracionPractica benchmark (see [fase28-integracion-practica.md](fase28-integracion-practica.md))
+promoted two items and added one capability:
+
+- **Multi-column Data Conversion is now ExecutionVerified.** A Data Conversion that converts 2+ input
+  columns kept every output column's stale `SourceInputColumnLineageID` after the save→reload cycle;
+  the per-column "unique input" rebind could not disambiguate and validation failed with `VS_ISBROKEN`.
+  `DataConversionLineageHandler` now rebinds **positionally** (output[i] ⇄ input[i]) — exact for
+  builder-produced pipelines. Regression: `MultiColumnDataConversionTests` +
+  `LineageEngineTests.Multiple_conversions_are_rebound_positionally`.
+- **OLE DB Destination keep-identity.** `ConfigureOleDbDestination(..., keepIdentity: true)` forces
+  fast-load (AccessMode 3) + `FastLoadKeepIdentity`, so explicit values land in an IDENTITY column
+  (ADO.NET/row-by-row cannot). Used to preserve `Mascota.id` 1..5.
+- **Execution is no longer license-gated** (licensed Integration Services installed): the practice's
+  Data Conversion / Derived Column / Excel / Access / ADO.NET / OLE DB flows execute via the licensed
+  `dtexec` and destination business data is verified.
+
 ## Definition of Done status
 
 The full six-component chain (Source→DataConversion→DerivedColumn→ConditionalSplit→Lookup→

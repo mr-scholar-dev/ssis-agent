@@ -72,39 +72,59 @@ namespace SsisMcp.Ssis.Lineage
             foreach (Wrapper.IDTSInputColumn100 ic in input.InputColumnCollection) inputLineages.Add(ic.LineageID);
             var valid = new HashSet<int>(inputLineages);
 
+            // Output columns that carry the prop, in collection order. Our builder adds exactly one
+            // input column and one output column per converted column, in the same order, so the
+            // stale output columns line up 1:1 with the input columns POSITIONALLY.
+            var propOutputs = new List<Wrapper.IDTSOutputColumn100>();
             foreach (Wrapper.IDTSOutput100 output in component.OutputCollection)
                 foreach (Wrapper.IDTSOutputColumn100 col in output.OutputColumnCollection)
+                    if (GetProp(col).HasValue) propOutputs.Add(col);
+
+            // Positional rebind: when the number of prop-carrying output columns equals the number of
+            // input columns, each output[i] converts input[i]. This resolves the multi-column case
+            // that a per-column "unique input" test cannot, and is exact for builder-produced pipelines.
+            var positional = propOutputs.Count == inputLineages.Count && inputLineages.Count > 0;
+
+            for (int i = 0; i < propOutputs.Count; i++)
+            {
+                var col = propOutputs[i];
+                var value = GetProp(col)!.Value;
+                if (valid.Contains(value)) continue; // already fine
+
+                var action = new RepairAction
                 {
-                    var value = GetProp(col);
-                    if (!value.HasValue || valid.Contains(value.Value)) continue; // fine
+                    RepairType = "RebindInputColumnLineage",
+                    Component = component.Name,
+                    OldReference = $"{col.Name}.{Prop}={value}"
+                };
 
-                    var action = new RepairAction
-                    {
-                        RepairType = "RebindInputColumnLineage",
-                        Component = component.Name,
-                        OldReference = $"{col.Name}.{Prop}={value.Value}"
-                    };
-
-                    if (inputLineages.Count == 1)
-                    {
-                        action.Confidence = RepairConfidence.Exact;
-                        action.NewReference = $"{col.Name}.{Prop}={inputLineages[0]}";
-                        action.Reason = "unique input column on the component";
-                        if (mode != RepairMode.DiagnoseOnly) { SetProp(col, inputLineages[0]); action.Applied = true; }
-                    }
-                    else if (inputLineages.Count == 0)
-                    {
-                        action.Confidence = RepairConfidence.None;
-                        action.Reason = "no input columns to bind to (upstream path removed?)";
-                    }
-                    else
-                    {
-                        action.Confidence = RepairConfidence.Ambiguous;
-                        action.Reason = $"{inputLineages.Count} input columns — cannot disambiguate safely";
-                        if (mode == RepairMode.ForceRepair) { SetProp(col, inputLineages[0]); action.Applied = true; }
-                    }
-                    actions.Add(action);
+                if (inputLineages.Count == 0)
+                {
+                    action.Confidence = RepairConfidence.None;
+                    action.Reason = "no input columns to bind to (upstream path removed?)";
                 }
+                else if (inputLineages.Count == 1)
+                {
+                    action.Confidence = RepairConfidence.Exact;
+                    action.NewReference = $"{col.Name}.{Prop}={inputLineages[0]}";
+                    action.Reason = "unique input column on the component";
+                    if (mode != RepairMode.DiagnoseOnly) { SetProp(col, inputLineages[0]); action.Applied = true; }
+                }
+                else if (positional)
+                {
+                    action.Confidence = RepairConfidence.Exact;
+                    action.NewReference = $"{col.Name}.{Prop}={inputLineages[i]}";
+                    action.Reason = "positional 1:1 rebind (output[i] converts input[i])";
+                    if (mode != RepairMode.DiagnoseOnly) { SetProp(col, inputLineages[i]); action.Applied = true; }
+                }
+                else
+                {
+                    action.Confidence = RepairConfidence.Ambiguous;
+                    action.Reason = $"{inputLineages.Count} input columns, {propOutputs.Count} converted — cannot disambiguate safely";
+                    if (mode == RepairMode.ForceRepair) { SetProp(col, inputLineages[0]); action.Applied = true; }
+                }
+                actions.Add(action);
+            }
             return actions;
         }
 

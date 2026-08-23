@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <RootNamespace>SsisMcp.Practica</RootNamespace>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <Import Project="..\..\build\Ssis.References.props" />
+  <ItemGroup>
+    <ProjectReference Include="..\SsisMcp.Core\SsisMcp.Core.csproj" />
+    <ProjectReference Include="..\SsisMcp.Ssis\SsisMcp.Ssis.csproj" />
+    <ProjectReference Include="..\SsisMcp.Designer\SsisMcp.Designer.csproj" />
+  </ItemGroup>
+  <Import Project="..\..\build\AdoNet.SqlClient.targets" />
+</Project>
