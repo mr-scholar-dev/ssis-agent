@@ -122,7 +122,13 @@ see the Match/No-Match topology without reading XML.
 > verify are **blocked on this host by SSIS edition licensing** (see risk #4) — the round-trip test
 > executes via `dtexec` when a licensed Integration Services edition is present and skips otherwise.
 
-### ADO.NET (official capability)
+### ADO.NET (official capability) — VS 2022 visual CONFIRMED (2026-08-23)
+
+`samples/VisualBenchmark_AdoNet.dtsx` (ADO NET Source → Derived Column → ADO NET Destination, ADO.NET
+connection manager) opened in the VS 2022 Data Flow designer and rendered correctly with the MCP
+layout. Full checklist PASS (connection manager, source/destination metadata, mappings, validate,
+save/reload, inspector, VS 2022 visual). Standalone execution stays EnvironmentBlocked.
+
 
 - **Connection manager**: `ConnectionFactory.AddAdoNetSql` (moniker centralized as
   `AdoNetSqlConnectionMoniker`, `System.Data.SqlClient`) — creates, round-trips, validates.
