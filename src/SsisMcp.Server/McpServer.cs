@@ -10,6 +10,7 @@ using SsisMcp.Ssis;
 using SsisMcp.Ssis.Building;
 using SsisMcp.Ssis.Execution;
 using SsisMcp.Ssis.Inspection;
+using SsisMcp.Planner;
 
 namespace SsisMcp.Server
 {
@@ -195,6 +196,26 @@ namespace SsisMcp.Server
                     Schema(("packagePath","Absolute path to the .dtsx.",true), ("dataFlowTask","Name of the Data Flow Task.",true)),
                     a => new LineageInspector(_packages).Inspect(ReqPath(a,"packagePath"), ReqPath(a,"dataFlowTask"))),
 
+                new ToolDef("files.discover",
+                    "List files in a directory, classified by kind (sql/excel/access/dtsx/doc/other). For planner Discover.",
+                    Schema(("dir","Directory to scan.",true), ("recursive","true to recurse (default false).",false)),
+                    a => FileDiscoverer.Discover(ReqPath(a,"dir"), a["recursive"] != null && (bool)a["recursive"]!)),
+
+                new ToolDef("sql.inspect",
+                    "Parse a .sql script: CREATE TABLE schemas (columns + nullability), INSERT row counts, and FKs (best-effort).",
+                    PathSchema("path","Absolute path to the .sql file."),
+                    a => SqlScriptInspector.Inspect(ReqPath(a,"path"))),
+
+                new ToolDef("excel.inspect",
+                    "Inspect an Excel workbook via ACE: sheets, columns and row counts.",
+                    Schema(("path","Absolute path to the .xls/.xlsx.",true), ("header","Treat first row as header (default true).",false)),
+                    a => ExcelInspector.Inspect(ReqPath(a,"path"), null, a["header"] == null || (bool)a["header"]!)),
+
+                new ToolDef("access.inspect",
+                    "Inspect an Access database via ACE: user tables, columns and row counts.",
+                    PathSchema("path","Absolute path to the .accdb/.mdb."),
+                    a => AccessInspector.Inspect(ReqPath(a,"path"))),
+
                 new ToolDef("package.create",
                     "Create a new empty .dtsx package (no seeded tasks/connections).",
                     Schema(("packagePath","Absolute path for the new .dtsx.",true), ("name","Package name.",true), ("targetServerVersion","Optional (e.g. 2022).",false)),
@@ -284,7 +305,48 @@ namespace SsisMcp.Server
                         bool? matched = expected == null ? (bool?)null : string.Equals(System.Convert.ToString(v), System.Convert.ToString(expected), StringComparison.Ordinal);
                         return new { value = v, expected, matched };
                     }),
+
+                new ToolDef("plan.run",
+                    "Autonomous planner: discover→analyze→plan→(clarify)→preview→apply→validate→execute→verify→repair→complete. " +
+                    "Given an input directory + target/source connection endpoints (+ optional hints/answers), it builds a package " +
+                    "using ONLY the other MCP tools. Never invents columns/mappings/rules; returns questions when ambiguous. " +
+                    "Arguments are a PlannerRequest (inputDir, packagePath, packageName, target, sources[], hints[], execute, ...).",
+                    new JObject { ["type"] = "object",
+                        ["properties"] = new JObject {
+                            ["inputDir"] = Str("Directory of source files to analyze."),
+                            ["packagePath"] = Str("Absolute path for the generated .dtsx."),
+                            ["packageName"] = Str("Package name."),
+                            ["target"] = new JObject { ["type"] = "object", ["description"] = "Destination connection {name,kind,dataSource,catalog}." },
+                            ["sources"] = new JObject { ["type"] = "array", ["description"] = "Source connections [{name,kind,dataSource?,catalog?,filePath?}]." },
+                            ["hints"] = new JObject { ["type"] = "array", ["description"] = "Explicit mapping hints [{targetTable,sourceName?,columnMap,derived}]." },
+                            ["execute"] = new JObject { ["type"] = "boolean", ["description"] = "Execute + verify when a licensed host is present." },
+                        },
+                        ["required"] = new JArray { "inputDir", "packagePath", "target" } },
+                    a =>
+                    {
+                        var req = JsonConvert.DeserializeObject<PlannerRequest>(a.ToString())
+                                  ?? throw new ArgumentException("invalid PlannerRequest");
+                        return new AutonomousPlanner(new SelfInvoker(this)).Run(req);
+                    }),
             };
+        }
+
+        private static JObject Str(string desc) => new JObject { ["type"] = "string", ["description"] = desc };
+
+        /// <summary>Lets the in-process planner (plan.run) drive the server's own tools via tools/call.</summary>
+        private sealed class SelfInvoker : IMcpToolInvoker
+        {
+            private readonly McpServer _s; private int _id;
+            public SelfInvoker(McpServer s) => _s = s;
+            public JToken Invoke(string tool, JObject arguments)
+            {
+                var req = new JObject { ["jsonrpc"] = "2.0", ["id"] = ++_id, ["method"] = "tools/call", ["params"] = new JObject { ["name"] = tool, ["arguments"] = arguments } };
+                var resp = _s.Dispatch(req) ?? throw new McpToolException(tool, "null response");
+                var res = resp["result"] ?? throw new McpToolException(tool, "no result");
+                var text = (string)res["content"]![0]!["text"]!;
+                if ((bool)res["isError"]!) throw new McpToolException(tool, text);
+                return JToken.Parse(text);
+            }
         }
 
         private static bool Preview(JObject a) => a["preview"] != null && (bool)a["preview"]!;
