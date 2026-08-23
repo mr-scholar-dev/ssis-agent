@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using SsisMcp.Core.Building;
 using SsisMcp.Ssis;
 using SsisMcp.Ssis.Building;
@@ -57,7 +58,63 @@ namespace SsisMcp.SampleGen
             Console.WriteLine("Open this .dtsx in the VS 2022 SSIS Designer to verify the Control Flow visually.");
 
             GenerateConnectionsSample(svc, outDir);
+            GenerateDataFlowSample(svc, outDir);
             return 0;
+        }
+
+        /// <summary>
+        /// Branching Data Flow benchmark for the Designer gate: OLE DB Source → Conditional Split →
+        /// (Valid → OLE DB Destination) / (default → OLE DB Destination). Real metadata + mappings.
+        /// Requires local SQL Server; skipped otherwise. No layout yet (for golden capture in VS).
+        /// </summary>
+        private static void GenerateDataFlowSample(PackageService svc, string outDir)
+        {
+            try
+            {
+                using (var c = new System.Data.SqlClient.SqlConnection("Data Source=.;Initial Catalog=tempdb;Integrated Security=true;TrustServerCertificate=true;Connect Timeout=3"))
+                {
+                    c.Open();
+                    using (var cmd = new System.Data.SqlClient.SqlCommand(
+                        "IF OBJECT_ID('tempdb.dbo.DfValid') IS NOT NULL DROP TABLE dbo.DfValid;" +
+                        "IF OBJECT_ID('tempdb.dbo.DfDefault') IS NOT NULL DROP TABLE dbo.DfDefault;" +
+                        "CREATE TABLE dbo.DfValid(Codigo int NULL, Nombre nvarchar(50) NULL);" +
+                        "CREATE TABLE dbo.DfDefault(Codigo int NULL, Nombre nvarchar(50) NULL);", c)) cmd.ExecuteNonQuery();
+                }
+            }
+            catch (Exception) { Console.WriteLine("Data Flow sample skipped (local SQL not reachable)."); return; }
+
+            var path = Path.GetFullPath(Path.Combine(outDir, "VisualBenchmark_DataFlow.dtsx"));
+            var pkg = new Dts.Package { Name = "DataFlowBenchmark" };
+            ConnectionFactory.AddSqlOleDb(pkg, "Db", ".", "tempdb");
+            svc.Save(pkg, path);
+            var ok1 = new PackageEditor(svc).Apply(path, cb => cb.AddTask(TaskKinds.DataFlow, "DFT")).Succeeded;
+
+            var r = new PackageEditor(svc).ApplyDataFlow(path, "DFT", b =>
+            {
+                b.AddComponent(ComponentKinds.OleDbSource, "Src");
+                b.ConfigureOleDbSource("Src", "Db", 2, "SELECT CAST(1 AS int) AS Codigo, CAST('a' AS nvarchar(50)) AS Nombre");
+                b.AddComponent(ComponentKinds.ConditionalSplit, "CS");
+                b.Connect("Src", "CS");
+                b.ExposeAllInputColumns("CS");
+                b.AddConditionalSplitCase("CS", "Valid", "Codigo >= 0", 0);
+                b.AddComponent(ComponentKinds.OleDbDestination, "DstValid");
+                b.Connect("CS", "DstValid", fromOutput: "Valid");
+                b.ConfigureOleDbDestination("DstValid", "Db", "[dbo].[DfValid]");
+                new MappingEngine(b).AutoMap("DstValid");
+                b.AddComponent(ComponentKinds.OleDbDestination, "DstDefault");
+                b.Connect("CS", "DstDefault", fromOutput: "Conditional Split Default Output");
+                b.ConfigureOleDbDestination("DstDefault", "Db", "[dbo].[DfDefault]");
+                new MappingEngine(b).AutoMap("DstDefault");
+            });
+
+            Console.WriteLine($"Generated: {path}  (DataFlow build: ok1={ok1} succeeded={r.Succeeded} {r.ErrorCode})");
+            if (r.Succeeded)
+            {
+                var df = r.Package!.DataFlows.First();
+                Console.WriteLine("   components: " + string.Join(", ", df.Components.Select(c => c.Name)));
+                Console.WriteLine("   paths: " + string.Join(", ", df.Paths.Select(p => p.StartComponent + "->" + p.EndComponent)));
+                Console.WriteLine("   Open the Data Flow tab in VS 2022, MOVE a component, Save All -> then share for golden capture.");
+            }
         }
 
         /// <summary>All six connection-manager families the benchmark uses, visible in the VS tray.</summary>
