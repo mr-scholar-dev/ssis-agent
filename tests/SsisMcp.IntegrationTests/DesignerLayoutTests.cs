@@ -192,6 +192,67 @@ namespace SsisMcp.IntegrationTests
             Assert.Equal(goldenComp.OrderBy(x => x), mcpComp.OrderBy(x => x)); // same component node-id set
         }
 
+        [Fact]
+        public void Package_layout_covers_control_flow_and_every_dft_pipeline_independently()
+        {
+            if (!SqlUp()) return;
+            using (var c = new System.Data.SqlClient.SqlConnection("Data Source=.;Initial Catalog=tempdb;Integrated Security=true;TrustServerCertificate=true"))
+            { c.Open(); using (var cmd = new System.Data.SqlClient.SqlCommand(
+                "IF OBJECT_ID('tempdb.dbo.MdC') IS NOT NULL DROP TABLE dbo.MdC; IF OBJECT_ID('tempdb.dbo.MdM') IS NOT NULL DROP TABLE dbo.MdM;" +
+                "CREATE TABLE dbo.MdC(Codigo int NULL); CREATE TABLE dbo.MdM(Codigo int NULL);", c)) cmd.ExecuteNonQuery(); }
+
+            var pkg = new Dts.Package { Name = "Practica" };
+            ConnectionFactory.AddSqlOleDb(pkg, "Vet", ".", "tempdb");
+            var path = Path.Combine(_dir, "Package.dtsx");
+            _svc.Save(pkg, path);
+            var ed = new PackageEditor(_svc);
+            Assert.True(ed.Apply(path, b =>
+            {
+                b.AddTask(TaskKinds.ExecuteSql, "SqlBorrar"); b.ConfigureExecuteSql("SqlBorrar", "Vet", "SELECT 1;");
+                b.AddTask(TaskKinds.DataFlow, "DFTCliente");
+                b.AddTask(TaskKinds.DataFlow, "DFTMascota");
+                b.Connect("SqlBorrar", "DFTCliente", PrecedenceValue.Success);
+                b.Connect("DFTCliente", "DFTMascota", PrecedenceValue.Success);
+            }).Succeeded);
+            Assert.True(ed.ApplyDataFlow(path, "DFTCliente", b =>
+            {
+                b.AddComponent(ComponentKinds.OleDbSource, "SrcCli");
+                b.ConfigureOleDbSource("SrcCli", "Vet", 2, "SELECT CAST(1 AS int) AS Codigo");
+                b.AddComponent(ComponentKinds.OleDbDestination, "DstCli"); b.Connect("SrcCli", "DstCli");
+                b.ConfigureOleDbDestination("DstCli", "Vet", "[dbo].[MdC]"); new MappingEngine(b).AutoMap("DstCli");
+            }).Succeeded);
+            Assert.True(ed.ApplyDataFlow(path, "DFTMascota", b =>
+            {
+                b.AddComponent(ComponentKinds.OleDbSource, "SrcMas");
+                b.ConfigureOleDbSource("SrcMas", "Vet", 2, "SELECT CAST(1 AS int) AS Codigo");
+                b.AddComponent(ComponentKinds.OleDbDestination, "DstMas"); b.Connect("SrcMas", "DstMas");
+                b.ConfigureOleDbDestination("DstMas", "Vet", "[dbo].[MdM]"); new MappingEngine(b).AutoMap("DstMas");
+            }).Succeeded);
+
+            // Unified two-level layout.
+            var info = _svc.InspectFile(path);
+            new PackageLayoutEngine().Apply(path, info, LayoutMode.Relayout);
+            var xml = File.ReadAllText(path);
+
+            // Control-flow block has the 3 tasks; each DFT has its OWN TaskHost block with its components.
+            var cfIds = NodeIds(xml).Where(id => id.Count(ch => ch == '\\') == 1).ToList();
+            Assert.Contains("Package\\SqlBorrar", cfIds);
+            Assert.Contains("Package\\DFTCliente", cfIds);
+            Assert.Contains("Package\\DFTMascota", cfIds);
+            Assert.Contains("<TaskHost design-time-name=\"Package\\DFTCliente\">", xml);
+            Assert.Contains("<TaskHost design-time-name=\"Package\\DFTMascota\">", xml);
+            var allNodes = NodeIds(xml);
+            Assert.Contains("Package\\DFTCliente\\SrcCli", allNodes);
+            Assert.Contains("Package\\DFTCliente\\DstCli", allNodes);
+            Assert.Contains("Package\\DFTMascota\\SrcMas", allNodes);
+            Assert.Contains("Package\\DFTMascota\\DstMas", allNodes);
+
+            // Functional package intact: both data flows still inspect + package validates.
+            var reinspected = _svc.InspectFile(path);
+            Assert.Equal(2, reinspected.DataFlows.Count);
+            Assert.Equal(Dts.DTSExecResult.Success, _svc.Validate(_svc.Load(path)));
+        }
+
         private static System.Collections.Generic.HashSet<string> ComponentNodeIds(string xml)
         {
             var set = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);

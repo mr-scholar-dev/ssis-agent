@@ -59,7 +59,66 @@ namespace SsisMcp.SampleGen
 
             GenerateConnectionsSample(svc, outDir);
             GenerateDataFlowSample(svc, outDir);
+            GeneratePracticaPackage(svc, outDir);
             return 0;
+        }
+
+        /// <summary>
+        /// The REAL-shape package: one Package.dtsx with SqlBorrar + four Data Flow Tasks, EACH with
+        /// its own internal pipeline (Source → Destination), plus unified two-level designer layout.
+        /// Double-clicking any DFT in VS 2022 opens that DFT's own laid-out Data Flow.
+        /// </summary>
+        private static void GeneratePracticaPackage(PackageService svc, string outDir)
+        {
+            var dfts = new[] { "DFTTipoCliente", "DFTCliente", "DFTMascota", "DFTEnfermedad" };
+            try
+            {
+                using (var c = new System.Data.SqlClient.SqlConnection("Data Source=.;Initial Catalog=tempdb;Integrated Security=true;TrustServerCertificate=true;Connect Timeout=3"))
+                {
+                    c.Open();
+                    foreach (var d in dfts)
+                        using (var cmd = new System.Data.SqlClient.SqlCommand(
+                            $"IF OBJECT_ID('tempdb.dbo.T_{d}') IS NOT NULL DROP TABLE dbo.T_{d}; CREATE TABLE dbo.T_{d}(Codigo int NULL);", c)) cmd.ExecuteNonQuery();
+                }
+            }
+            catch (Exception) { Console.WriteLine("Practica package skipped (local SQL not reachable)."); return; }
+
+            var path = Path.GetFullPath(Path.Combine(outDir, "Package.dtsx"));
+            var pkg = new Dts.Package { Name = "IntegracionPractica" };
+            ConnectionFactory.AddSqlOleDb(pkg, "Vet", ".", "tempdb");
+            svc.Save(pkg, path);
+            var ed = new PackageEditor(svc);
+
+            ed.Apply(path, b =>
+            {
+                b.AddTask(TaskKinds.ExecuteSql, "SqlBorrar");
+                b.ConfigureExecuteSql("SqlBorrar", "Vet", "SELECT 1;");
+                foreach (var d in dfts) b.AddTask(TaskKinds.DataFlow, d);
+                b.Connect("SqlBorrar", dfts[0], PrecedenceValue.Success);
+                for (var i = 0; i < dfts.Length - 1; i++) b.Connect(dfts[i], dfts[i + 1], PrecedenceValue.Success);
+            });
+
+            foreach (var d in dfts)
+            {
+                var r = ed.ApplyDataFlow(path, d, b =>
+                {
+                    b.AddComponent(ComponentKinds.OleDbSource, "Src_" + d);
+                    b.ConfigureOleDbSource("Src_" + d, "Vet", 2, "SELECT CAST(1 AS int) AS Codigo");
+                    b.AddComponent(ComponentKinds.OleDbDestination, "Dst_" + d);
+                    b.Connect("Src_" + d, "Dst_" + d);
+                    b.ConfigureOleDbDestination("Dst_" + d, "Vet", $"[dbo].[T_{d}]");
+                    new MappingEngine(b).AutoMap("Dst_" + d);
+                });
+                if (!r.Succeeded) Console.WriteLine($"   {d} pipeline: {r.ErrorCode} {r.Detail}");
+            }
+
+            var info = svc.InspectFile(path);
+            new SsisMcp.Designer.PackageLayoutEngine().Apply(path, info, SsisMcp.Designer.LayoutMode.Relayout);
+            var final = svc.InspectFile(path);
+            Console.WriteLine($"Generated: {path}");
+            Console.WriteLine($"   Control Flow: {final.Executables.Count} tasks; Data Flows: {final.DataFlows.Count} (each with its own pipeline)");
+            Console.WriteLine("   Post-layout validate: " + svc.Validate(svc.Load(path)));
+            Console.WriteLine("   Open Package.dtsx in VS 2022; double-click any DFT to see its own laid-out Data Flow.");
         }
 
         /// <summary>
