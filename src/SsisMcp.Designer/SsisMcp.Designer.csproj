@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <RootNamespace>SsisMcp.Designer</RootNamespace>
+  </PropertyGroup>
+  <!-- Layout-only. Depends on Core DTOs; knows nothing about the SSIS OM. It reads the logical graph
+       and writes ONLY the design-time layout annotation (DesignTimeProperties/GraphLayout), which SSIS
+       permits editing separately from functional config. -->
+  <ItemGroup>
+    <ProjectReference Include="..\SsisMcp.Core\SsisMcp.Core.csproj" />
+  </ItemGroup>
+</Project>

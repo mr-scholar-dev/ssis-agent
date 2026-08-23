@@ -48,6 +48,12 @@ namespace SsisMcp.SampleGen
 
             var info = svc.InspectFile(path);
             Console.WriteLine($"Executables: {info.Executables.Count}, PrecedenceConstraints: {info.PrecedenceConstraints.Count}, Connections: {info.Connections.Count}");
+
+            // Apply MCP-computed designer layout (top->bottom) so VS shows our arrangement, not auto-arrange.
+            var boxes = new SsisMcp.Designer.ControlFlowLayoutEngine().Apply(path, info, SsisMcp.Designer.LayoutMode.Relayout);
+            Console.WriteLine($"Designer layout applied ({boxes.Count} nodes positioned top->bottom).");
+            // functional package still loads/validates after layout injection
+            Console.WriteLine("Post-layout validate: " + svc.Validate(svc.Load(path)));
             Console.WriteLine("Open this .dtsx in the VS 2022 SSIS Designer to verify the Control Flow visually.");
 
             GenerateConnectionsSample(svc, outDir);

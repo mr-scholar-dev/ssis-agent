@@ -1,23 +1,23 @@
 <?xml version="1.0"?>
 <DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
   DTS:refId="Package"
-  DTS:CreationDate="8/23/2026 12:05:49 AM"
+  DTS:CreationDate="8/23/2026 12:16:01 AM"
   DTS:CreationName="Microsoft.Package"
   DTS:CreatorComputerName="DESKTOP-VP44JKB"
   DTS:CreatorName="DESKTOP-VP44JKB\serra"
-  DTS:DTSID="{79F93C9D-A795-45EA-B12E-B4F657A68F25}"
+  DTS:DTSID="{B8D2AEF8-DE74-4C92-B74B-C600B6C0D782}"
   DTS:ExecutableType="Microsoft.Package"
   DTS:LastModifiedProductVersion="17.0.1000.7"
   DTS:LocaleID="1033"
   DTS:ObjectName="IntegracionPractica"
-  DTS:VersionGUID="{0599BD65-E8D8-4CEB-B1CB-AE67D09A9569}">
+  DTS:VersionGUID="{0231C48E-AC3F-49ED-9BA0-255DCD53822C}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
     <DTS:ConnectionManager
       DTS:refId="Package.ConnectionManagers[Vet]"
       DTS:CreationName="OLEDB"
-      DTS:DTSID="{7B354D8A-B355-43B2-920C-831DE40C2B30}"
+      DTS:DTSID="{E26B0FA5-5DA4-4E80-96A9-58128B0109DF}"
       DTS:ObjectName="Vet">
       <DTS:ObjectData>
         <DTS:ConnectionManager
@@ -32,7 +32,7 @@
     <DTS:Executable
       DTS:refId="Package\DFTCliente"
       DTS:CreationName="Microsoft.Pipeline"
-      DTS:DTSID="{9C10BE44-17C0-4873-A206-5B72A0BB3E18}"
+      DTS:DTSID="{99479BC1-732E-41DB-B8BA-A7055BD56574}"
       DTS:ExecutableType="Microsoft.Pipeline"
       DTS:LocaleID="-1"
       DTS:ObjectName="DFTCliente"
@@ -46,7 +46,7 @@
     <DTS:Executable
       DTS:refId="Package\DFTEnfermedad"
       DTS:CreationName="Microsoft.Pipeline"
-      DTS:DTSID="{79CA627D-66DB-441E-8B5A-D582653BC852}"
+      DTS:DTSID="{07BC23CA-7827-44E5-B51A-83E030F56491}"
       DTS:ExecutableType="Microsoft.Pipeline"
       DTS:LocaleID="-1"
       DTS:ObjectName="DFTEnfermedad"
@@ -60,7 +60,7 @@
     <DTS:Executable
       DTS:refId="Package\DFTMascota"
       DTS:CreationName="Microsoft.Pipeline"
-      DTS:DTSID="{3190E2F2-31BC-4C04-BCCC-B089E02E6E4B}"
+      DTS:DTSID="{91721698-0797-4779-B6B7-E7DCDE82E85A}"
       DTS:ExecutableType="Microsoft.Pipeline"
       DTS:LocaleID="-1"
       DTS:ObjectName="DFTMascota"
@@ -74,7 +74,7 @@
     <DTS:Executable
       DTS:refId="Package\DFTTipoCliente"
       DTS:CreationName="Microsoft.Pipeline"
-      DTS:DTSID="{725C50B2-4F86-4746-B612-FAB498CB23E3}"
+      DTS:DTSID="{A9D8C8AD-EAB4-4704-AEE3-FB020DB4BBBE}"
       DTS:ExecutableType="Microsoft.Pipeline"
       DTS:LocaleID="-1"
       DTS:ObjectName="DFTTipoCliente"
@@ -88,7 +88,7 @@
     <DTS:Executable
       DTS:refId="Package\SqlBorrar"
       DTS:CreationName="Microsoft.ExecuteSQLTask"
-      DTS:DTSID="{60C17E68-4A88-41C7-96FE-2AF1FDFF515D}"
+      DTS:DTSID="{1917D4D5-2E34-4BC0-BCE6-0B4940579B7D}"
       DTS:ExecutableType="Microsoft.ExecuteSQLTask"
       DTS:LocaleID="-1"
       DTS:ObjectName="SqlBorrar"
@@ -97,43 +97,58 @@
       <DTS:Variables />
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
-          SQLTask:Connection="{7B354D8A-B355-43B2-920C-831DE40C2B30}"
+          SQLTask:Connection="{E26B0FA5-5DA4-4E80-96A9-58128B0109DF}"
           SQLTask:SqlStatementSource="SELECT 1;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
       </DTS:ObjectData>
     </DTS:Executable>
   </DTS:Executables>
   <DTS:PrecedenceConstraints>
     <DTS:PrecedenceConstraint
-      DTS:refId="Package.PrecedenceConstraints[{8C6253BC-B287-427D-9801-861FC6950AA4\}]"
+      DTS:refId="Package.PrecedenceConstraints[{255E8FF2-64EB-48A0-8642-F6F0CDFC5B3A\}]"
       DTS:CreationName=""
-      DTS:DTSID="{8C6253BC-B287-427D-9801-861FC6950AA4}"
-      DTS:From="Package\DFTCliente"
-      DTS:LogicalAnd="True"
-      DTS:ObjectName="{8C6253BC-B287-427D-9801-861FC6950AA4}"
-      DTS:To="Package\DFTMascota" />
-    <DTS:PrecedenceConstraint
-      DTS:refId="Package.PrecedenceConstraints[{96EB6ECD-18C6-486A-95EF-25151B5CCF0F\}]"
-      DTS:CreationName=""
-      DTS:DTSID="{96EB6ECD-18C6-486A-95EF-25151B5CCF0F}"
+      DTS:DTSID="{255E8FF2-64EB-48A0-8642-F6F0CDFC5B3A}"
       DTS:From="Package\SqlBorrar"
       DTS:LogicalAnd="True"
-      DTS:ObjectName="{96EB6ECD-18C6-486A-95EF-25151B5CCF0F}"
+      DTS:ObjectName="{255E8FF2-64EB-48A0-8642-F6F0CDFC5B3A}"
       DTS:To="Package\DFTTipoCliente" />
     <DTS:PrecedenceConstraint
-      DTS:refId="Package.PrecedenceConstraints[{B3EB5F00-6183-4378-BA2F-8993445D1086\}]"
+      DTS:refId="Package.PrecedenceConstraints[{A370B10F-06B6-4A8C-A469-C40BFA23FBD1\}]"
       DTS:CreationName=""
-      DTS:DTSID="{B3EB5F00-6183-4378-BA2F-8993445D1086}"
+      DTS:DTSID="{A370B10F-06B6-4A8C-A469-C40BFA23FBD1}"
+      DTS:From="Package\DFTCliente"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{A370B10F-06B6-4A8C-A469-C40BFA23FBD1}"
+      DTS:To="Package\DFTMascota" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{C866255B-9B2D-4D93-865E-9886B204E2B9\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{C866255B-9B2D-4D93-865E-9886B204E2B9}"
       DTS:From="Package\DFTMascota"
       DTS:LogicalAnd="True"
-      DTS:ObjectName="{B3EB5F00-6183-4378-BA2F-8993445D1086}"
+      DTS:ObjectName="{C866255B-9B2D-4D93-865E-9886B204E2B9}"
       DTS:To="Package\DFTEnfermedad" />
     <DTS:PrecedenceConstraint
-      DTS:refId="Package.PrecedenceConstraints[{C4B29F98-04C7-4B46-8E3E-FF65D80334D9\}]"
+      DTS:refId="Package.PrecedenceConstraints[{ED6922D9-C534-474A-A29E-65D939BF6636\}]"
       DTS:CreationName=""
-      DTS:DTSID="{C4B29F98-04C7-4B46-8E3E-FF65D80334D9}"
+      DTS:DTSID="{ED6922D9-C534-474A-A29E-65D939BF6636}"
       DTS:From="Package\DFTTipoCliente"
       DTS:LogicalAnd="True"
-      DTS:ObjectName="{C4B29F98-04C7-4B46-8E3E-FF65D80334D9}"
+      DTS:ObjectName="{ED6922D9-C534-474A-A29E-65D939BF6636}"
       DTS:To="Package\DFTCliente" />
   </DTS:PrecedenceConstraints>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--This CDATA section contains the layout information of the package, written by SsisMcp.Designer.-->
+<Objects Version="8">
+  <Package design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout Size="180,42" Id="Package\SqlBorrar" TopLeft="20,20" />
+        <NodeLayout Size="180,42" Id="Package\DFTTipoCliente" TopLeft="20,122" />
+        <NodeLayout Size="180,42" Id="Package\DFTCliente" TopLeft="20,224" />
+        <NodeLayout Size="180,42" Id="Package\DFTMascota" TopLeft="20,326" />
+        <NodeLayout Size="180,42" Id="Package\DFTEnfermedad" TopLeft="20,428" />
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+</Objects>]]></DTS:DesignTimeProperties>
 </DTS:Executable>
