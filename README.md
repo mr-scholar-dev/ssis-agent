@@ -14,8 +14,11 @@ APIs**, not through fragile UI automation.
 >
 > **Fase 12 — Metadata & Lineage engine** resolves the generic `save→reload→stale-lineage`
 > (`VS_NEEDSNEWMETADATA`) bug by rebinding references to current lineage ids by stable identity,
-> bounded and confidence-rated, inside Safety. Data Conversion is now **Verified** (round-trip +
-> double reload). **65 tests.** See [docs/metadata-lineage-engine.md](docs/metadata-lineage-engine.md).
+> bounded and confidence-rated, inside Safety. Data Conversion round-trip fixed (double reload).
+> Data Flow now also covers **Lookup**, **Excel (.xlsx/.xls via ACE)**, **Access (ACE OLE DB)** and
+> **Flat File** — all `StructurallyVerified`. **72 tests.** No component is `ExecutionVerified`:
+> Data Flow execution is `EnvironmentBlocked` by SSIS edition licensing on this host
+> (`execution.dataFlow.available=false`). See [docs/data-flow-builder.md](docs/data-flow-builder.md).
 >
 > Run the MCP server: `dotnet run --project src/SsisMcp.Server`. Tools & schemas:
 > [docs/mcp-tools.md](docs/mcp-tools.md).

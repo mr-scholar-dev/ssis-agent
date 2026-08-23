@@ -37,20 +37,50 @@ Mapping engine (`MappingEngine`): `Compare`, `AutoMap`, `SetMapping`, `RemoveMap
 classification `Exact / Compatible / RequiresConversion / Incompatible / MissingSource /
 MissingDestination`. Conversions are **reported, never inserted silently**.
 
-## Capability matrix — empirically verified on this host (SSIS v17 + local SQL Server)
+## Verification levels
 
-| Component | Build | Validate | Full round-trip (reload) | Status |
-|---|---|---|---|---|
-| OLE DB Source (SQL command) | ✅ | ✅ | ✅ | **verified** |
-| OLE DB Destination (+ AutoMap) | ✅ | ✅ | ✅ | **verified** |
-| Derived Column (`Impuesto=Monto*0.13`) | ✅ | ✅ | ✅ | **verified** |
-| Conditional Split (case + default, expression over upstream) | ✅ | ✅ | ✅ | **verified** |
-| Column mapping engine (compare/auto/set/remove) | ✅ | ✅ | ✅ | **verified** |
-| Data Conversion | ✅ | ✅ | ✅ (via Metadata/Lineage engine) | **verified** (Fase 12) |
-| Lookup (Match/No Match, join, returned cols) | ✅ | ✅ | ✅ (double reload) | **verified**\* |
-| Excel Source/Destination | code present | not run | — | **unverified** |
-| Flat File Source/Destination | code present | not run | — | **unverified** |
-| Aggregate/Sort/UnionAll/Merge/MergeJoin/Multicast/RowCount | catalog only | — | — | **not implemented** |
+`Unsupported` · `Partial` · `StructurallyVerified` (build + Validate + Safety + save + reload +
+second reload + metadata + lineage + mappings + inspector round-trip) · `ExecutionVerified`
+(+ execution + row counts + destination data) · `EnvironmentBlocked`.
+
+**No component is `ExecutionVerified` on this host** — Data Flow execution is `EnvironmentBlocked`
+by SSIS edition licensing (risk #4). Everything below is `StructurallyVerified` for the structural
+dimension and `EnvironmentBlocked` for the execution dimension.
+
+## Capability matrix — empirically verified on this host (SSIS v17 + local SQL Server + ACE)
+
+| Component / format | Structural | Execution |
+|---|---|---|
+| OLE DB Source (SQL command / table) | StructurallyVerified | EnvironmentBlocked |
+| OLE DB Destination (+ AutoMap) | StructurallyVerified | EnvironmentBlocked |
+| Derived Column (`Impuesto=(DT_NUMERIC,10,2)(Monto*0.13)`) | StructurallyVerified | EnvironmentBlocked |
+| Conditional Split (case + default + upstream expression) | StructurallyVerified | EnvironmentBlocked |
+| Data Conversion (+ Metadata/Lineage rebind on reload) | StructurallyVerified | EnvironmentBlocked |
+| Lookup (Match/No Match, join, returned cols, Full cache) | StructurallyVerified | EnvironmentBlocked |
+| Column mapping engine (compare/auto/set/remove) | StructurallyVerified | EnvironmentBlocked |
+| **Excel Source/Destination** (.xlsx + .xls, ACE, x64) | StructurallyVerified | EnvironmentBlocked |
+| **Access** via ACE OLE DB Source (.accdb, table + SQL command) | StructurallyVerified | EnvironmentBlocked |
+| **Flat File Source/Destination** (delimited, header, typed) | StructurallyVerified | EnvironmentBlocked |
+| Aggregate/Sort/UnionAll/Merge/MergeJoin/Multicast/RowCount | Unsupported (catalog only) | — |
+
+### Excel (ACE on x64)
+The built-in SSIS EXCEL connection manager hardcodes **Jet.OLEDB.4.0** (32-bit, not registered on
+x64). Fix: `ConnectionFactory.AddExcel` overrides the CM `ConnectionString` to
+`Microsoft.ACE.OLEDB.12.0` with `Extended Properties="Excel 12.0 Xml"` (.xlsx) / `"Excel 8.0"`
+(.xls), `HDR=YES`. Excel columns arrive as `DT_WSTR`. Verified flows: **Excel → Data Conversion →
+OLE DB Destination** (.xlsx) and **OLE DB Source → Excel Destination** (report), plus **.xls** source.
+
+### Access (ACE OLE DB — no "Access Source" component)
+`ConnectionFactory.AddAccess` creates an OLE DB CM with `Microsoft.ACE.OLEDB.12.0` over the
+`.accdb`; data is read with a normal **OLE DB Source** (table access mode 0 and SQL command mode 2),
+mapped, saved, reloaded, double-validated. `.accdb` fixtures are created via ADOX; `.mdb` is the
+same provider path (not separately fixture-tested).
+
+### Flat File
+`ConnectionFactory.AddFlatFile` builds a delimited Flat File CM with an explicit typed column list
+(SSIS does not infer columns — the wizard's "suggest types" is reproduced): last column carries the
+row delimiter, the rest the column delimiter. Verified: Flat File Source columns/types + Flat File
+Source → Destination with AutoMap, round-trip.
 
 ### Verified acceptance chains
 - **SQL → SQL**: OLE DB Source → Derived Column → OLE DB Destination — build, validate, commit,

@@ -144,6 +144,47 @@ namespace SsisMcp.Ssis.Building
             ReinitUnderConnection(inst);
         }
 
+        /// <summary>Flat File Source: reads columns from the flat file connection manager.</summary>
+        public void ConfigureFlatFileSource(string name, string connectionManager)
+        {
+            var comp = Require(name);
+            var inst = comp.Instantiate();
+            WireConnection(comp, connectionManager);
+            ReinitUnderConnection(inst);
+        }
+
+        /// <summary>Flat File Destination: writes to the flat file connection manager (overwrite).</summary>
+        public void ConfigureFlatFileDestination(string name, string connectionManager, bool overwrite = true)
+        {
+            var comp = Require(name);
+            var inst = comp.Instantiate();
+            WireConnection(comp, connectionManager);
+            try { inst.SetComponentProperty("Overwrite", overwrite); } catch { /* property name varies */ }
+            ReinitUnderConnection(inst);
+        }
+
+        /// <summary>Excel Source: reads a worksheet (OpenRowset = "Sheet1$") via an ACE-backed Excel CM.</summary>
+        public void ConfigureExcelSource(string name, string connectionManager, string sheet)
+        {
+            var comp = Require(name);
+            var inst = comp.Instantiate();
+            WireConnection(comp, connectionManager);
+            inst.SetComponentProperty("AccessMode", 0);
+            inst.SetComponentProperty("OpenRowset", sheet);
+            ReinitUnderConnection(inst);
+        }
+
+        /// <summary>Excel Destination: writes to a worksheet that already exists with matching columns.</summary>
+        public void ConfigureExcelDestination(string name, string connectionManager, string sheet)
+        {
+            var comp = Require(name);
+            var inst = comp.Instantiate();
+            WireConnection(comp, connectionManager);
+            inst.SetComponentProperty("AccessMode", 0);
+            inst.SetComponentProperty("OpenRowset", sheet);
+            ReinitUnderConnection(inst);
+        }
+
         // ---------------- transformations ----------------
 
         /// <summary>Marks upstream columns as readonly inputs so expressions can reference them.</summary>
