@@ -6,6 +6,7 @@
     <Project Path="src/SsisMcp.Server/SsisMcp.Server.csproj" />
     <Project Path="src/SsisMcp.Ssis/SsisMcp.Ssis.csproj" />
     <Project Path="src/SsisMcp.SsisPoc/SsisMcp.SsisPoc.csproj" />
+    <Project Path="src/SsisMcp.VisualStudioBridge/SsisMcp.VisualStudioBridge.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SsisMcp.IntegrationTests/SsisMcp.IntegrationTests.csproj" />

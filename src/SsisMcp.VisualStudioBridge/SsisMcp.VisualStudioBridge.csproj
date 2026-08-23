@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <RootNamespace>SsisMcp.VisualStudioBridge</RootNamespace>
+  </PropertyGroup>
+  <!-- The bridge depends ONLY on Core. It knows nothing about the SSIS Object Model, keeping the
+       SSIS core fully independent of Visual Studio (and vice-versa). -->
+  <ItemGroup>
+    <ProjectReference Include="..\SsisMcp.Core\SsisMcp.Core.csproj" />
+  </ItemGroup>
+</Project>

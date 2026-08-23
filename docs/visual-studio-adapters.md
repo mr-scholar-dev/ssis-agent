@@ -1,5 +1,55 @@
 # Visual Studio adapters — official VS 2022 + VS 2026 support
 
+## ⛔ Environment blocker on this host (Designer Layout phase)
+
+The Designer/visual phase requires a full Visual Studio IDE **with the SQL Server Integration
+Services Projects extension** (the SSIS Designer). Empirically confirmed on this host:
+
+| Detected instance | IDE (`devenv.exe`) | SSIS Designer | Can open `.dtproj` |
+|---|---|---|---|
+| `2022\BuildTools` (17.14.35) | **no** (Build Tools only) | no | **no** |
+| `18\Community` (VS 2026, 18.7.3) | yes | **no** (extension absent) | **no** |
+| SSMS 22 (22.9.0) | n/a | no | no |
+
+`Microsoft.DataTransformationServices.Design.dll` is present in **no** VS/SQL/SSMS directory.
+Also, Microsoft's SSIS Projects extension currently targets **VS 2019/2022 only** — there is no
+VS 2026 build — and no full VS 2022 IDE is installed here to host it.
+
+**Consequence:** the phase's Definition of Done (open a generated package in the VS 2022/2026 SSIS
+Designer and see the diagram) is **`EnvironmentBlocked`** on this host. Per policy we do **not**
+fake it: `DesignerLayoutVerified` is not claimed. What *is* delivered and verifiable:
+
+- **Concrete detection** (`WindowsVisualStudioLocator`, `VisualStudio2022Adapter`,
+  `VisualStudio2026Adapter`) reports each instance honestly, incl. `DesignerUnavailable`.
+- Three independent status dimensions are tracked separately:
+  `FunctionalStructureVerified` (✅ today) · `DesignerLayoutVerified` (⛔ EnvironmentBlocked) ·
+  `ExecutionVerified` (⛔ EnvironmentBlocked).
+
+## How SSIS persists designer layout (reference — not locally verifiable without the Designer)
+
+> Documented from the SSIS package schema; **not** confirmed against a VS-created golden on this
+> host (no Designer available). Writing this layout blind is deliberately **not** done yet, to honor
+> the "don't invent properties / don't fake verification" rule.
+
+- **Control Flow** layout lives at package level in a design-time element
+  `DTS:Property[@DTS:Name="DesignTimeProperties"]` whose value is a CDATA XML blob:
+  `<Objects><Package><LayoutInfo><GraphLayout>` containing `NodeLayout` (per executable: `Id`,
+  `Size` = W,H, `Location`/`TopLeft` = X,Y) and `EdgeLayout` (per precedence constraint: connector
+  routing between node ids).
+- **Data Flow** layout is stored per Data Flow Task, again as a design-time `GraphLayout` CDATA,
+  with a `NodeLayout` per pipeline component and `EdgeLayout`/paths between component input/output
+  anchors.
+- It is stored **outside** the runtime Object Model (a design-time annotation), so a layout engine
+  would read/write only this blob, kept strictly separate from functional component configuration
+  (which always goes through the SSIS OM).
+
+A `DesignerLayoutEngine` (control-flow top→bottom, data-flow left→right, branch separation, overlap
+avoidance, preserve-existing) is **designed but not implemented** pending a host where the output can
+actually be opened in the Designer and verified — otherwise it would be theoretical, not proven.
+
+---
+
+
 **Both Visual Studio 2022 and Visual Studio 2026 are first-class, officially supported from the
 initial design.** VS 2022 is *not* treated as future/best-effort compatibility.
 
