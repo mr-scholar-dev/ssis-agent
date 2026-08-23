@@ -7,10 +7,11 @@ APIs**, not through fragile UI automation.
 
 > Status: **Fase 0, 1, 4, 2/3 and 5 (Control Flow Builder) complete.** Environment detection, a real
 > SSIS Object Model roundtrip, the transactional Safety layer, full inspection, a **read-only MCP
-> server** (5 tools), and a Safety-gated **Control Flow builder** (create/configure/rename/remove/
-> connect/disconnect with round-trip re-inspection) all pass against the installed v17 runtime
-> (**53 tests**). Write tools remain unexposed by design. Capability matrix + partials:
-> [docs/control-flow-builder.md](docs/control-flow-builder.md). Next: Data Flow builder.
+> server** (5 tools), a Safety-gated **Control Flow builder**, and a Safety-gated **Data Flow
+> builder** (OLE DB source/dest, Derived Column, Conditional Split, mapping engine — round-tripped
+> with lineage) all pass against the installed v17 runtime (**61 tests**). Write tools remain
+> unexposed by design. Data Flow capability matrix, partials (Data Conversion reload / Lookup /
+> Excel / Flat File) and discovered risks: [docs/data-flow-builder.md](docs/data-flow-builder.md).
 >
 > Run the MCP server: `dotnet run --project src/SsisMcp.Server`. Tools & schemas:
 > [docs/mcp-tools.md](docs/mcp-tools.md).

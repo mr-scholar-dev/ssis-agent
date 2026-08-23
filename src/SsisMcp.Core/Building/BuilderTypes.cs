@@ -16,7 +16,14 @@ namespace SsisMcp.Core.Building
         ValidationFailed,
         ExternalChange,
         Busy,
-        MutationError
+        MutationError,
+        // Data Flow specific
+        MissingSource,
+        MissingDestination,
+        IncompatibleType,
+        InvalidLineageState,
+        StaleMetadata,
+        UnsupportedEnvironment
     }
 
     /// <summary>Thrown by builder operations for pre-commit, structurally-detectable failures.</summary>
