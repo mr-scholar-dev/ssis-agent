@@ -5,7 +5,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using SsisMcp.Core.Environment;
+using SsisMcp.Designer;
 using SsisMcp.Ssis;
+using SsisMcp.Ssis.Building;
+using SsisMcp.Ssis.Execution;
 using SsisMcp.Ssis.Inspection;
 
 namespace SsisMcp.Server
@@ -24,7 +27,9 @@ namespace SsisMcp.Server
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver(),
             NullValueHandling = NullValueHandling.Ignore,
-            Formatting = Formatting.None
+            Formatting = Formatting.None,
+            // Serialize enums as names ("Success", not 0) — external MCP clients read semantic values.
+            Converters = { new Newtonsoft.Json.Converters.StringEnumConverter() }
         };
 
         private readonly IEnvironmentDetector _environment;
@@ -184,7 +189,129 @@ namespace SsisMcp.Server
                         var info = _packages.InspectFile(ReqPath(a, "packagePath"));
                         return new { name = info.Name, dataFlows = info.DataFlows };
                     }),
+
+                new ToolDef("metadata.inspect",
+                    "Inspect the lineage/metadata graph + validation of one Data Flow Task in a .dtsx.",
+                    Schema(("packagePath","Absolute path to the .dtsx.",true), ("dataFlowTask","Name of the Data Flow Task.",true)),
+                    a => new LineageInspector(_packages).Inspect(ReqPath(a,"packagePath"), ReqPath(a,"dataFlowTask"))),
+
+                new ToolDef("package.create",
+                    "Create a new empty .dtsx package (no seeded tasks/connections).",
+                    Schema(("packagePath","Absolute path for the new .dtsx.",true), ("name","Package name.",true), ("targetServerVersion","Optional (e.g. 2022).",false)),
+                    a =>
+                    {
+                        var path = ReqPath(a,"packagePath");
+                        var pkg = _packages.CreateEmpty(ReqPath(a,"name"), (string?)a["targetServerVersion"]);
+                        _packages.Save(pkg, path);
+                        return _packages.InspectFile(path);
+                    }),
+
+                new ToolDef("controlflow.apply",
+                    "Apply (or preview) a batch of Control Flow operations atomically through the Safety layer. " +
+                    "operations: addConnection, addVariable, addTask, configureExecuteSql, configureScriptTask, " +
+                    "setTaskProperty, connect, disconnect, removeTask, rename. Set preview:true for a validated dry-run (no write).",
+                    ApplySchema("Control Flow operation objects, e.g. {op:'addTask',kind:'DataFlow',name:'DFT'}."),
+                    a =>
+                    {
+                        var path = ReqPath(a, "packagePath");
+                        var ops = (JArray)(a["operations"] ?? new JArray());
+                        var editor = new PackageEditor(_packages);
+                        void Act(ControlFlowBuilder b) => OperationTranslator.ApplyControlFlow(b, ops);
+                        return Preview(a) ? editor.PreviewControlFlow(path, Act) : editor.Apply(path, Act, "controlflow.apply");
+                    }),
+
+                new ToolDef("dataflow.apply",
+                    "Apply (or preview) a batch of Data Flow operations to a named Data Flow Task, atomically through the Safety layer. " +
+                    "operations: addComponent, configure{OleDb,AdoNet,Excel,FlatFile}{Source,Destination}, connect, exposeAllInputColumns, " +
+                    "derivedColumn, dataConversion, conditionalSplitCase, lookup, map, autoMap. Set preview:true for a validated dry-run (no write).",
+                    DataFlowApplySchema(),
+                    a =>
+                    {
+                        var path = ReqPath(a, "packagePath");
+                        var dft = ReqPath(a, "dataFlowTask");
+                        var ops = (JArray)(a["operations"] ?? new JArray());
+                        var editor = new PackageEditor(_packages);
+                        void Act(DataFlowBuilder b) => OperationTranslator.ApplyDataFlow(b, ops);
+                        return Preview(a) ? editor.PreviewDataFlow(path, dft, Act) : editor.ApplyDataFlow(path, dft, Act, "dataflow.apply");
+                    }),
+
+                new ToolDef("layout.apply",
+                    "Apply the unified Control Flow + Data Flow layout (top→bottom) and persist it in the .dtsx.",
+                    Schema(("packagePath","Absolute path to the .dtsx.",true), ("mode","AddMissing (default) or Relayout.",false)),
+                    a =>
+                    {
+                        var path = ReqPath(a,"packagePath");
+                        var mode = ParseLayoutMode((string?)a["mode"]);
+                        var info = _packages.InspectFile(path);
+                        var boxes = new PackageLayoutEngine().Apply(path, info, mode);
+                        return new { applied = true, mode = mode.ToString(), nodes = boxes };
+                    }),
+
+                new ToolDef("package.validate",
+                    "Load a .dtsx and run the real SSIS Package.Validate.",
+                    PathSchema("packagePath","Absolute path to the .dtsx."),
+                    a =>
+                    {
+                        var pkg = _packages.Load(ReqPath(a,"packagePath"));
+                        var res = _packages.Validate(pkg);
+                        return new { result = res.ToString(), valid = res == Microsoft.SqlServer.Dts.Runtime.DTSExecResult.Success };
+                    }),
+
+                new ToolDef("package.execute",
+                    "Execute a .dtsx with a Microsoft-signed host (licensed dtexec). Returns a structured outcome " +
+                    "(Success/Failure/EnvironmentBlocked) with errors/warnings — never faked.",
+                    PathSchema("packagePath","Absolute path to the .dtsx."),
+                    a => new SsdtDebugExecutionHost().Execute(ReqPath(a,"packagePath"))),
+
+                new ToolDef("data.verify",
+                    "Run a scalar SQL query against a SQL Server connection string and (optionally) compare to an expected value. " +
+                    "For business verification of destination data after execution.",
+                    Schema(("connectionString","ADO.NET SQL Server connection string.",true), ("sql","Scalar SELECT.",true), ("expected","Optional expected value to compare (string/number).",false)),
+                    a =>
+                    {
+                        var v = new DestinationDataVerifier(ReqPath(a,"connectionString")).Scalar(ReqPath(a,"sql"));
+                        var expected = (a["expected"] as Newtonsoft.Json.Linq.JValue)?.Value;
+                        bool? matched = expected == null ? (bool?)null : string.Equals(System.Convert.ToString(v), System.Convert.ToString(expected), StringComparison.Ordinal);
+                        return new { value = v, expected, matched };
+                    }),
             };
+        }
+
+        private static bool Preview(JObject a) => a["preview"] != null && (bool)a["preview"]!;
+
+        private static LayoutMode ParseLayoutMode(string? s) =>
+            string.Equals(s, "Relayout", StringComparison.OrdinalIgnoreCase) ? LayoutMode.Relayout : LayoutMode.AddMissing;
+
+        private static JObject Schema(params (string name, string desc, bool required)[] props)
+        {
+            var p = new JObject();
+            var req = new JArray();
+            foreach (var (name, desc, required) in props)
+            {
+                p[name] = new JObject { ["type"] = "string", ["description"] = desc };
+                if (required) req.Add(name);
+            }
+            return new JObject { ["type"] = "object", ["properties"] = p, ["required"] = req };
+        }
+
+        private static JObject ApplySchema(string opsDesc) => new JObject
+        {
+            ["type"] = "object",
+            ["properties"] = new JObject
+            {
+                ["packagePath"] = new JObject { ["type"] = "string", ["description"] = "Absolute path to the .dtsx." },
+                ["preview"] = new JObject { ["type"] = "boolean", ["description"] = "true = validated dry-run (no write)." },
+                ["operations"] = new JObject { ["type"] = "array", ["description"] = opsDesc, ["items"] = new JObject { ["type"] = "object" } }
+            },
+            ["required"] = new JArray { "packagePath", "operations" }
+        };
+
+        private static JObject DataFlowApplySchema()
+        {
+            var s = ApplySchema("Data Flow operation objects, e.g. {op:'addComponent',kind:'OleDbSource',name:'Src'}.");
+            ((JObject)s["properties"]!)["dataFlowTask"] = new JObject { ["type"] = "string", ["description"] = "Name of the target Data Flow Task." };
+            ((JArray)s["required"]!).Add("dataFlowTask");
+            return s;
         }
 
         private static JObject Result(JToken? id, JObject result) =>

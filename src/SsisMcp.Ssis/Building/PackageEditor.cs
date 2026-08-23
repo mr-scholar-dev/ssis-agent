@@ -120,6 +120,51 @@ namespace SsisMcp.Ssis.Building
             return result;
         }
 
+        /// <summary>
+        /// Dry-run of a Control Flow batch: loads a throwaway copy, applies the operations in memory,
+        /// runs SSIS Validate, and returns the would-be inspection — WITHOUT writing to disk. Same
+        /// structural/validation checks as <see cref="Apply"/>'s precheck, surfaced for a client.
+        /// </summary>
+        public OperationResult PreviewControlFlow(string packagePath, Action<ControlFlowBuilder> operation)
+        {
+            try
+            {
+                var pkg = _svc.Load(packagePath);
+                operation(new ControlFlowBuilder(pkg, _catalog));
+                var valid = _svc.Validate(pkg);
+                var result = new OperationResult { SafetyState = "Preview", Detail = "validate=" + valid, Succeeded = valid == Dts.DTSExecResult.Success };
+                if (!result.Succeeded) result.ErrorCode = BuilderErrorCode.ValidationFailed.ToString();
+                result.Package = _svc.Inspect(pkg);
+                return result;
+            }
+            catch (BuilderException bx) { return OperationResult.Fail(bx.Code, bx.Message); }
+            catch (Exception ex) { return OperationResult.Fail(BuilderErrorCode.MutationError, ex.GetType().Name + ": " + ex.Message); }
+        }
+
+        /// <summary>
+        /// Dry-run of a Data Flow batch on the named DFT: in-memory apply + Validate, no write. Note the
+        /// in-memory pipeline is validated pre-reload; <see cref="ApplyDataFlow"/> additionally reloads
+        /// and repairs lineage. Use preview to catch structural/config errors early.
+        /// </summary>
+        public OperationResult PreviewDataFlow(string packagePath, string dataFlowTaskName, Action<DataFlowBuilder> operation)
+        {
+            var pipelineCatalog = new SsisPipelineComponentCatalog();
+            try
+            {
+                var pkg = _svc.Load(packagePath);
+                var pipe = FindPipeline(pkg, dataFlowTaskName)
+                    ?? throw new BuilderException(BuilderErrorCode.TaskNotFound, $"Data Flow Task '{dataFlowTaskName}' not found");
+                operation(new DataFlowBuilder(pipe, pkg, pipelineCatalog));
+                var valid = _svc.Validate(pkg);
+                var result = new OperationResult { SafetyState = "Preview", Detail = "validate=" + valid, Succeeded = valid == Dts.DTSExecResult.Success };
+                if (!result.Succeeded) result.ErrorCode = BuilderErrorCode.ValidationFailed.ToString();
+                result.Package = _svc.Inspect(pkg);
+                return result;
+            }
+            catch (BuilderException bx) { return OperationResult.Fail(bx.Code, bx.Message); }
+            catch (Exception ex) { return OperationResult.Fail(BuilderErrorCode.MutationError, ex.GetType().Name + ": " + ex.Message); }
+        }
+
         private static Wrapper.MainPipe? FindPipeline(Dts.Package pkg, string dftName)
         {
             foreach (var exec in Flatten(pkg.Executables))

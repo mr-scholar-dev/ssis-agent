@@ -24,18 +24,23 @@ namespace SsisMcp.UnitTests.Server
         }
 
         [Fact]
-        public void ToolsList_exposes_exactly_the_five_readonly_tools()
+        public void ToolsList_exposes_the_public_build_surface()
         {
             var resp = new McpServer().Dispatch(Req(2, "tools/list"))!;
             var names = ((JArray)resp["result"]!["tools"]!).Select(t => (string)t!["name"]!).ToArray();
 
-            Assert.Equal(
-                new[] { "environment.detect", "project.inspect", "package.inspect", "controlflow.inspect", "dataflow.inspect" }.OrderBy(x => x),
-                names.OrderBy(x => x));
+            // read/inspect
+            foreach (var n in new[] { "environment.detect", "project.inspect", "package.inspect",
+                "controlflow.inspect", "dataflow.inspect", "metadata.inspect" })
+                Assert.Contains(n, names);
+            // create/mutate/run
+            foreach (var n in new[] { "package.create", "controlflow.apply", "dataflow.apply",
+                "layout.apply", "package.validate", "package.execute", "data.verify" })
+                Assert.Contains(n, names);
 
-            // No write/mutation tools may be exposed in this phase.
-            Assert.DoesNotContain(names, n => n!.StartsWith("changes.") || n.StartsWith("package.backup")
-                || n.Contains("apply") || n.Contains("undo"));
+            // Every tool advertises an object input schema.
+            foreach (var t in (JArray)resp["result"]!["tools"]!)
+                Assert.Equal("object", (string?)t!["inputSchema"]!["type"]);
         }
 
         [Fact]

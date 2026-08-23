@@ -48,6 +48,47 @@ namespace SsisMcp.Ssis.Building
             return IdOf(exec);
         }
 
+        /// <summary>Adds a connection manager. kind: adonet-sql | oledb-sql | excel | access.</summary>
+        public string AddConnection(string kind, string name,
+            string? dataSource = null, string? catalog = null, string? filePath = null, bool xlsx = true, bool hdr = true)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new BuilderException(BuilderErrorCode.InvalidPrecedence, "connection name is required");
+            foreach (Dts.ConnectionManager c in _pkg.Connections)
+                if (string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase))
+                    throw new BuilderException(BuilderErrorCode.NameCollision, $"a connection named '{name}' already exists");
+
+            Dts.ConnectionManager cm;
+            switch ((kind ?? "").ToLowerInvariant())
+            {
+                case "adonet-sql":
+                    cm = ConnectionFactory.AddAdoNetSql(_pkg, name, Req(dataSource, "dataSource"), Req(catalog, "catalog")); break;
+                case "oledb-sql":
+                    cm = ConnectionFactory.AddSqlOleDb(_pkg, name, Req(dataSource, "dataSource"), Req(catalog, "catalog")); break;
+                case "excel":
+                    cm = ConnectionFactory.AddExcel(_pkg, name, Req(filePath, "filePath"), xlsx, hdr); break;
+                case "access":
+                    cm = ConnectionFactory.AddAccess(_pkg, name, Req(filePath, "filePath")); break;
+                default:
+                    throw new BuilderException(BuilderErrorCode.Unsupported, $"unknown connection kind '{kind}'");
+            }
+            return cm.ID;
+
+            string Req(string? v, string p) => string.IsNullOrWhiteSpace(v)
+                ? throw new BuilderException(BuilderErrorCode.InvalidPrecedence, $"'{p}' is required for connection kind '{kind}'") : v!;
+        }
+
+        /// <summary>Adds a package variable.</summary>
+        public void AddVariable(string name, string ns = "User", object? value = null, bool readOnly = false)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new BuilderException(BuilderErrorCode.InvalidPrecedence, "variable name is required");
+            foreach (Dts.Variable v in _pkg.Variables)
+                if (string.Equals(v.Name, name, StringComparison.OrdinalIgnoreCase) && string.Equals(v.Namespace, ns, StringComparison.OrdinalIgnoreCase))
+                    throw new BuilderException(BuilderErrorCode.NameCollision, $"variable '{ns}::{name}' already exists");
+            _pkg.Variables.Add(name, readOnly, ns, value ?? "");
+        }
+
         /// <summary>Configures an Execute SQL Task. Returns which properties the runtime accepted.</summary>
         public ExecuteSqlConfigResult ConfigureExecuteSql(
             string name, string? connection = null, string? sqlStatement = null,

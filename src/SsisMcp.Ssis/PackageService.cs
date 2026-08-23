@@ -34,6 +34,14 @@ namespace SsisMcp.Ssis
         /// Builds a minimal but real package: one Sequence container holding one Execute SQL Task,
         /// plus an OLE DB connection manager, at the requested target server version.
         /// </summary>
+        /// <summary>Creates a clean, empty package (no seeded tasks/connections). For MCP package.create.</summary>
+        public Dts.Package CreateEmpty(string name, string? targetServerVersion = null)
+        {
+            var pkg = new Dts.Package { Name = string.IsNullOrWhiteSpace(name) ? "Package" : name };
+            if (!string.IsNullOrWhiteSpace(targetServerVersion)) TrySetTargetServerVersion(pkg, targetServerVersion!);
+            return pkg;
+        }
+
         public Dts.Package CreateMinimalPackage(string name, string targetServerVersion)
         {
             var pkg = new Dts.Package { Name = name };

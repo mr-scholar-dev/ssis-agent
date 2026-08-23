@@ -112,6 +112,13 @@ ClienteXML.xml: valid XML, <Cliente> count=5   (written by ScriptClienteXML in-p
 MascotaXML.xml: valid XML, <Mascota> count=10  (written by ScriptMascotaXML in-package)
 ```
 
+### Visual validation (user, 2026-08-23)
+
+The user opened `IntegracionPractica.dtsx` in **Visual Studio 2022** (Professional, SSIS designer) and
+confirmed it renders correctly: Control Flow, internal Data Flows, connection managers, components,
+paths, and layout all look right. This closes the **DesignerLayoutVerified** level by direct human
+inspection (beyond the persisted-layout check). **Fase 28 / real benchmark = CLOSED.**
+
 Three verification levels for this package:
 
 ```
