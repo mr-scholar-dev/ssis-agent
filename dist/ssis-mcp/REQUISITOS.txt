@@ -1,0 +1,63 @@
+SSIS Agent MCP — REQUISITOS PARA OTRA PC
+=========================================
+
+Copia esta carpeta (ssis-mcp) a la PC destino y corre:
+
+    powershell -ExecutionPolicy Bypass -File install.ps1
+
+El instalador imprime un "Environment Probe". Si sale coreUsable = True y los
+checks en Pass, el MCP funciona (build + layout + validate + execute + verify +
+planner). Registra el servidor 'ssis' en Codex/Claude Code si sus CLIs están.
+
+
+REQUISITOS DE LA PC
+-------------------
+[ ] Windows x64
+[ ] .NET Framework 4.8
+[ ] SQL Server Integration Services (LICENCIADO) instalado
+        -> imprescindible: las DLLs Microsoft.SqlServer.* se resuelven del GAC de
+           esta PC; NO vienen en esta carpeta. Sin IS, el server ni siquiera puede
+           inspeccionar/construir paquetes (no solo ejecutar).
+[ ] VSTA (se instala junto con Integration Services)
+        -> necesario para Script Tasks.
+[ ] Proveedor ACE OLE DB de 64 bits (Access Database Engine 2016 Redistributable x64)
+        -> para fuentes Excel/Access. OJO: si el Office/Access es de 32 bits, el ACE
+           es de 32 bits y el server (x64) NO lo usa. Instala el ACE x64.
+[ ] SQL Server (motor) + las bases de datos que uses
+        -> para package.execute y data.verify.
+
+"Tener Access" (la app de Office) NO equivale a tener Integration Services.
+Integration Services es un componente aparte de SQL Server.
+
+
+VERIFICACIÓN (lo dice el propio install.ps1)
+--------------------------------------------
+coreUsable = True
+  - dotnet.framework:          Pass
+  - ssis.runtime:              Pass   (ManagedDTS ...)   <- el bloqueante nº1
+  - provider.ace.excel_access: Pass   (Microsoft.ACE.OLEDB.12.0 ...)
+  - provider.sqlserver:        Pass
+  - sqlserver.connectivity:    Pass   (si vas a ejecutar/verify)
+
+Si ssis.runtime NO está en Pass  -> instala Integration Services en esa PC.
+Si el check de ACE NO está en Pass -> instala el ACE x64.
+
+
+RUTAS Y CONEXIONES (por-máquina)
+--------------------------------
+El MCP funcionará, pero cada paquete .dtsx trae sus conexiones/rutas propias:
+  - Construir NUEVO con el planner: dale los endpoints/archivos de ESTA PC. OK.
+  - Reejecutar un .dtsx existente: hay que reapuntar sus Connection Managers
+    (SQL / Excel / Access) y la variable de salida (p.ej. OutDir) a ESTA PC.
+    Esto es normal en cualquier paquete SSIS, no es un problema del MCP.
+
+
+REGISTRO EN EL CLIENTE
+----------------------
+Claude Code:  el install.ps1 escribe config\.mcp.json (o usa: claude mcp add ssis
+              --scope user -- "<ruta>\bin\SsisMcp.Server.exe")
+Codex:        codex mcp add ssis -- "<ruta>\bin\SsisMcp.Server.exe"
+              (o pega config\codex-config.toml en %USERPROFILE%\.codex\config.toml)
+
+Nota: stdout del server es solo JSON-RPC; los logs van a stderr (y a archivo si
+defines la variable de entorno SSIS_MCP_LOG).
