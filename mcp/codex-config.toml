@@ -1,5 +1,0 @@
-# Paste into ~/.codex/config.toml  (Windows: %USERPROFILE%\.codex\config.toml)
-[mcp_servers.ssis]
-command = "C:\\Users\\serra\\OneDrive\\Desktop\\SSIS-Agent-MCP\\src\\SsisMcp.Server\\bin\\Debug\\net48\\SsisMcp.Server.exe"
-args = []
-env = {  }

@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "ssis": {
-      "command": "C:\\Users\\serra\\OneDrive\\Desktop\\SSIS-Agent-MCP\\dist\\ssis-mcp\\bin\\SsisMcp.Server.exe",
-      "args": [],
-      "env": {}
-    }
-  }
-}
