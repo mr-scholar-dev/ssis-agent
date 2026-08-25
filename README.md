@@ -149,8 +149,17 @@ a real Access→Enfermedad slice executes + verifies + undoes). Execution/data-v
 
 ## License
 
-MIT © 2026 Isaac Serrano — see [LICENSE](LICENSE). You may use, modify and distribute this software
-freely, but the copyright notice and license must be kept in all copies (attribution required).
+**GNU AGPL-3.0** — Copyright (C) 2026 **Isaac Serrano** — see [LICENSE](LICENSE).
+
+Strong copyleft: you may use, study, modify and distribute this software, but **any distributed or
+network-served derivative must be released as open source under the AGPL-3.0 and keep this copyright
+and attribution**. Running a modified version as a network service also obligates you to provide its
+source. This protects the work from being taken closed-source or rebranded without credit.
+
+    SSIS Agent MCP — Copyright (C) 2026 Isaac Serrano
+    This program is free software: you can redistribute it and/or modify it under the terms of the
+    GNU Affero General Public License as published by the Free Software Foundation, version 3.
+    This program is distributed WITHOUT ANY WARRANTY. See the GNU AGPL-3.0 for details.
 
 ## Status
 
