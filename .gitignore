@@ -20,7 +20,7 @@ coverage*/
 
 ## NuGet
 *.nupkg
-packages/
+/packages/
 
 ## SSIS working artifacts produced by the agent (never commit generated/backed-up packages)
 **/_backups/
