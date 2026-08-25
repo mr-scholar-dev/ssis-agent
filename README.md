@@ -1,6 +1,6 @@
 # SSIS Agent MCP — v1.0.0
 
-A local **Model Context Protocol (MCP)** server for Windows that lets any MCP client (Claude Code,
+A local (Claude Code,
 Codex, …) **inspect, build, validate, execute, verify, diagnose and repair SQL Server Integration
 Services (SSIS) packages** — programmatically through the SSIS Object Model / Runtime / Pipeline APIs,
 never through fragile UI automation. It also ships an **Autonomous Planner** that turns *"analyze these
