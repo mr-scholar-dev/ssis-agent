@@ -147,6 +147,11 @@ the MCP protocol over real stdio, the redistributable server, the planner on two
 a real Access→Enfermedad slice executes + verifies + undoes). Execution/data-verify tests are portable
 (skip cleanly where a licensed host or SQL Server is absent).
 
+## License
+
+MIT © 2026 Isaac Serrano — see [LICENSE](LICENSE). You may use, modify and distribute this software
+freely, but the copyright notice and license must be kept in all copies (attribution required).
+
 ## Status
 
 **V1.0.0 — closed.** All critical acceptance gates pass end to end, from original files → planner →
